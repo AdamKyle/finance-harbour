@@ -1,9 +1,11 @@
 import { SaveDebtProfileRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-debt-profile-request-definition';
+import { SaveLeftOverWarningThresholdRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-left-over-warning-threshold-request-definition';
 import { SaveMonthlyExpenseRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-monthly-expense-request-definition';
 import { SaveProfileOnboardingRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-profile-onboarding-request-definition';
 import { DebtStepFormState } from 'components/pages/onboarding/types/debt-step-form-state';
 import { ExpenseStepFormState } from 'components/pages/onboarding/types/expense-step-form-state';
 import { IncomeStepFormState } from 'components/pages/onboarding/types/income-step-form-state';
+import { LeftOverWarningStepFormState } from 'components/pages/onboarding/types/left-over-warning-step-form-state';
 import { ProfileStepFormState } from 'components/pages/onboarding/types/profile-step-form-state';
 import {
   dollarsToCents,
@@ -22,8 +24,25 @@ import {
 export const mapProfileFormToApiRequest = (
   profileRequest: ProfileStepFormState
 ): SaveProfileOnboardingRequestDefinition => ({
-  nickname: profileRequest.nickname || undefined,
+  nickname: profileRequest.nickname,
   profile_photo: profileRequest.profile_photo || undefined,
+});
+
+/**
+ * Maps the warning threshold form to an integer-cent API payload.
+ *
+ * The form value is validated before this boundary conversion runs.
+ *
+ * @param warningRequest - Current warning-threshold request.
+ * @returns The warning-threshold API request.
+ * @throws This function does not throw.
+ */
+export const mapLeftOverWarningFormToApiRequest = (
+  warningRequest: LeftOverWarningStepFormState
+): SaveLeftOverWarningThresholdRequestDefinition => ({
+  left_over_warning_amount_cents: dollarsToCents(
+    warningRequest.left_over_warning_amount_dollars
+  ),
 });
 
 /**

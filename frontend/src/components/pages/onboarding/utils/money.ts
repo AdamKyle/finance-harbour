@@ -18,12 +18,16 @@ const parseDecimalInput = (
   submittedValue: string,
   allowLeadingDecimal: boolean
 ): DecimalParseResult => {
-  if (submittedValue === '') {
+  const valueWithoutCommas = submittedValue.replaceAll(',', '');
+
+  if (valueWithoutCommas === '') {
     return { is_valid: false };
   }
 
-  const isNegative = submittedValue.startsWith('-');
-  const unsignedValue = isNegative ? submittedValue.slice(1) : submittedValue;
+  const isNegative = valueWithoutCommas.startsWith('-');
+  const unsignedValue = isNegative
+    ? valueWithoutCommas.slice(1)
+    : valueWithoutCommas;
   const decimalParts = unsignedValue.split('.');
 
   if (decimalParts.length > 2) {
@@ -95,6 +99,23 @@ export const dollarsToCents = (value: string): number => {
  */
 export const centsToDollars = (cents: number): string => {
   return (cents / 100).toFixed(2);
+};
+
+/**
+ * Formats integer cents for user-facing dollar display.
+ *
+ * Thousands separators and two decimal places keep expense-card amounts easy
+ * to scan without changing the stored integer value.
+ *
+ * @param cents - The integer cent amount to format.
+ * @returns A comma-separated dollar amount with two decimal places.
+ * @throws This function does not throw.
+ */
+export const formatCentsAsDollars = (cents: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
 };
 
 /**

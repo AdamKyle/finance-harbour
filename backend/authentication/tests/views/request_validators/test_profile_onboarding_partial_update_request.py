@@ -49,11 +49,7 @@ class ProfileOnboardingPartialUpdateRequestTest(TestCase):
 
         self.assertIn("nickname", raised_error.exception.detail)
 
-    def test_blank_nickname_passes_validation(self) -> None:
-        User.objects.create_user(
-            email="existing-blank-profile-request@example.com",
-            password="StrongPassword123!",
-        )
+    def test_blank_nickname_fails_validation(self) -> None:
         user = User.objects.create_user(
             email="blank-profile-request@example.com",
             password="StrongPassword123!",
@@ -63,9 +59,10 @@ class ProfileOnboardingPartialUpdateRequestTest(TestCase):
             instance=user,
         )
 
-        profile_request.validate()
+        with self.assertRaises(ValidationError) as raised_error:
+            profile_request.validate()
 
-        self.assertEqual(profile_request.validated_data, {"nickname": ""})
+        self.assertIn("nickname", raised_error.exception.detail)
 
     def test_current_users_nickname_is_excluded_from_unique_validation(self) -> None:
         user = User.objects.create_user(

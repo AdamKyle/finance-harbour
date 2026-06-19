@@ -1,4 +1,4 @@
 export interface SaveProfileOnboardingRequestDefinition {
-  nickname?: string;
+  nickname: string;
   profile_photo?: string;
 }

@@ -1,13 +1,17 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import ConcludeStep from './steps/conclude-step';
 import DebtStep from './steps/debt-step';
 import ExpenseStep from './steps/expense-step';
+import ImportantExpensesStep from './steps/important-expenses-step';
 import IncomeStep from './steps/income-step';
+import LeftOverWarningStep from './steps/left-over-warning-step';
 import ProfileStep from './steps/profile-step';
 import { DebtStepFormState } from './types/debt-step-form-state';
 import { ExpenseStepFormState } from './types/expense-step-form-state';
+import { ImportantExpensesStepFormState } from './types/important-expenses-step-form-state';
 import { IncomeStepFormState } from './types/income-step-form-state';
+import { LeftOverWarningStepFormState } from './types/left-over-warning-step-form-state';
 import {
   ONBOARDING_STEP_ORDER,
   OnboardingStepId,
@@ -16,14 +20,18 @@ import { ProfileStepFormState } from './types/profile-step-form-state';
 import { useScrollToTop } from '../../../util/hooks/use-scroll-to-top';
 
 import { useCompleteOnboarding } from 'components/pages/onboarding/api/hooks/use-complete-onboarding';
+import { useImportantExpenses } from 'components/pages/onboarding/api/hooks/use-important-expenses';
 import { useOnboardingProgress } from 'components/pages/onboarding/api/hooks/use-onboarding-progress';
 import { useSaveDebtProfile } from 'components/pages/onboarding/api/hooks/use-save-debt-profile';
+import { useSaveLeftOverWarningThreshold } from 'components/pages/onboarding/api/hooks/use-save-left-over-warning-threshold';
 import { useSaveMonthlyExpense } from 'components/pages/onboarding/api/hooks/use-save-monthly-expense';
 import { useSaveProfileOnboarding } from 'components/pages/onboarding/api/hooks/use-save-profile-onboarding';
+import { useSaveRequiredExpenses } from 'components/pages/onboarding/api/hooks/use-save-required-expenses';
 import {
   mapDebtFormToApiRequest,
   mapExpenseFormToApiRequest,
   mapIncomeFormToApiRequest,
+  mapLeftOverWarningFormToApiRequest,
   mapProfileFormToApiRequest,
 } from 'components/pages/onboarding/utils/onboarding-api-request-mappers';
 import { buildOnboardingProgressFormData } from 'components/pages/onboarding/utils/onboarding-form-request';
@@ -31,6 +39,8 @@ import {
   DebtFieldErrorsDefinition,
   ExpenseFieldErrorsDefinition,
   IncomeFieldErrorsDefinition,
+  LeftOverWarningFieldErrorsDefinition,
+  ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { useOnboardingFormValidation } from 'components/pages/onboarding/validations/hooks/use-onboarding-form-validation';
 
@@ -53,13 +63,32 @@ const Onboarding = () => {
   const { save: saveMonthlyExpense, loading: expenseLoading } =
     useSaveMonthlyExpense();
   const {
+    data: importantExpenseCards,
+    loading: importantExpensesLoading,
+    isLoadingMore: importantExpensesLoadingMore,
+    canLoadMore: canLoadMoreImportantExpenses,
+    onEndReached: loadMoreImportantExpenses,
+    setRefresh: setImportantExpensesRefresh,
+  } = useImportantExpenses();
+  const { save: saveRequiredExpenses, loading: requiredExpensesLoading } =
+    useSaveRequiredExpenses();
+  const { save: saveLeftOverWarning, loading: warningThresholdLoading } =
+    useSaveLeftOverWarningThreshold();
+  const {
     complete,
     loading: completeLoading,
     error: completeError,
   } = useCompleteOnboarding({ navigate_to_route: navigateToRoute });
-  const { validateDebtStep, validateIncomeStep, validateExpenseStep } =
-    useOnboardingFormValidation();
+  const {
+    validateProfileStep,
+    validateDebtStep,
+    validateIncomeStep,
+    validateExpenseStep,
+    validateLeftOverWarningStep,
+  } = useOnboardingFormValidation();
 
+  const [profileFieldErrors, setProfileFieldErrors] =
+    useState<ProfileFieldErrorsDefinition>({});
   const [debtStepError, setDebtStepError] = useState('');
   const [debtFieldErrors, setDebtFieldErrors] = useState<
     DebtFieldErrorsDefinition[]
@@ -69,6 +98,8 @@ const Onboarding = () => {
   const [expenseStepError, setExpenseStepError] = useState('');
   const [expenseFieldErrors, setExpenseFieldErrors] =
     useState<ExpenseFieldErrorsDefinition>({});
+  const [warningFieldErrors, setWarningFieldErrors] =
+    useState<LeftOverWarningFieldErrorsDefinition>({});
   const [saveError, setSaveError] = useState('');
   const formRef = useRef<HTMLElement>(null);
   const { scrollToTop } = useScrollToTop({
@@ -77,7 +108,12 @@ const Onboarding = () => {
   });
 
   const isLoading =
-    profileLoading || debtLoading || expenseLoading || completeLoading;
+    profileLoading ||
+    debtLoading ||
+    expenseLoading ||
+    requiredExpensesLoading ||
+    warningThresholdLoading ||
+    completeLoading;
   const initialIndex = useMemo(() => {
     if (!progress) {
       return 0;
@@ -90,6 +126,31 @@ const Onboarding = () => {
     return progressStepIndex >= 0 ? progressStepIndex : 0;
   }, [progress]);
   const saveApiError = saveError ? { message: saveError } : null;
+
+  useEffect(() => {
+    if (requestData.important_expenses.selected_keys.length > 0) {
+      return;
+    }
+
+    const selectedKeys = importantExpenseCards
+      .filter((card) => card.selected)
+      .map((card) => card.key);
+
+    if (selectedKeys.length === 0) {
+      return;
+    }
+
+    setRequestData((currentRequest) => ({
+      ...currentRequest,
+      important_expenses: {
+        selected_keys: selectedKeys,
+      },
+    }));
+  }, [
+    importantExpenseCards,
+    requestData.important_expenses.selected_keys.length,
+    setRequestData,
+  ]);
 
   const handleProfileRequestChange = (profileRequest: ProfileStepFormState) => {
     setRequestData((currentRequest) => ({
@@ -119,6 +180,24 @@ const Onboarding = () => {
     }));
   };
 
+  const handleImportantExpensesRequestChange = (
+    importantExpensesRequest: ImportantExpensesStepFormState
+  ) => {
+    setRequestData((currentRequest) => ({
+      ...currentRequest,
+      important_expenses: importantExpensesRequest,
+    }));
+  };
+
+  const handleLeftOverWarningRequestChange = (
+    warningRequest: LeftOverWarningStepFormState
+  ) => {
+    setRequestData((currentRequest) => ({
+      ...currentRequest,
+      left_over_warning: warningRequest,
+    }));
+  };
+
   const handleRequestNext = async (stepIndex: number): Promise<boolean> => {
     const currentStep = ONBOARDING_STEP_ORDER[stepIndex];
     const nextStep =
@@ -127,6 +206,16 @@ const Onboarding = () => {
     setSaveError('');
 
     if (currentStep === OnboardingStepId.PROFILE) {
+      const validationResult = validateProfileStep(requestData.profile);
+
+      setProfileFieldErrors(validationResult.field_errors);
+
+      if (!validationResult.is_valid) {
+        scrollToTop();
+
+        return false;
+      }
+
       const saveResult = await saveProfile(
         mapProfileFormToApiRequest(requestData.profile)
       );
@@ -198,6 +287,40 @@ const Onboarding = () => {
 
         return false;
       }
+
+      setImportantExpensesRefresh((currentRefresh) => !currentRefresh);
+    } else if (currentStep === OnboardingStepId.IMPORTANT_EXPENSES) {
+      const saveResult = await saveRequiredExpenses(
+        requestData.important_expenses
+      );
+
+      if (!saveResult.ok) {
+        setSaveError(saveResult.error ?? 'Failed to save important expenses');
+
+        return false;
+      }
+    } else if (currentStep === OnboardingStepId.LEFT_OVER_WARNING) {
+      const validationResult = validateLeftOverWarningStep(
+        requestData.left_over_warning
+      );
+
+      setWarningFieldErrors(validationResult.field_errors);
+
+      if (!validationResult.is_valid) {
+        scrollToTop();
+
+        return false;
+      }
+
+      const saveResult = await saveLeftOverWarning(
+        mapLeftOverWarningFormToApiRequest(requestData.left_over_warning)
+      );
+
+      if (!saveResult.ok) {
+        setSaveError(saveResult.error ?? 'Failed to save warning threshold');
+
+        return false;
+      }
     } else if (currentStep === OnboardingStepId.CONCLUDE) {
       return complete();
     }
@@ -244,7 +367,7 @@ const Onboarding = () => {
       tabIndex={-1}
     >
       <FormWizard
-        total_steps={5}
+        total_steps={7}
         initial_index={initialIndex}
         name="Get started"
         is_loading={isLoading}
@@ -255,6 +378,7 @@ const Onboarding = () => {
           <ProfileStep
             request={requestData.profile}
             setRequest={handleProfileRequestChange}
+            error={profileFieldErrors.nickname}
           />
         </Step>
         <Step step_title="Your debts">
@@ -278,6 +402,24 @@ const Onboarding = () => {
             setRequest={handleExpenseRequestChange}
             stepError={expenseStepError}
             fieldErrors={expenseFieldErrors}
+          />
+        </Step>
+        <Step step_title="Select whats important">
+          <ImportantExpensesStep
+            request={requestData.important_expenses}
+            setRequest={handleImportantExpensesRequestChange}
+            cards={importantExpenseCards}
+            loading={importantExpensesLoading}
+            is_loading_more={importantExpensesLoadingMore}
+            can_load_more={canLoadMoreImportantExpenses}
+            on_load_more={loadMoreImportantExpenses}
+          />
+        </Step>
+        <Step step_title="Left over warning threshold">
+          <LeftOverWarningStep
+            request={requestData.left_over_warning}
+            setRequest={handleLeftOverWarningRequestChange}
+            error={warningFieldErrors.left_over_warning_amount_dollars}
           />
         </Step>
         <Step step_title="All done">

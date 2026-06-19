@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import React, { ReactElement, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+
+import { useScrollToTop } from '../../util/hooks/use-scroll-to-top';
 
 import ApiErrorAlert from 'lib/api-handler/components/api-error-alert';
 
@@ -21,7 +23,7 @@ const FormWizard = ({
   const step_refs = useRef<Array<HTMLDivElement | null>>([]);
 
   const step_elements = useMemo(
-    () => React.Children.toArray(children) as ReactElement[],
+    () => React.Children.toArray(children).filter(React.isValidElement),
     [children]
   );
 
@@ -30,12 +32,16 @@ const FormWizard = ({
     [step_elements, total_steps]
   );
 
+  const { scrollToTop } = useScrollToTop();
+
   const handlePreviousClick = () => {
     if (current_index === 0) {
       return;
     }
 
     set_current_index((value) => value - 1);
+
+    scrollToTop();
   };
 
   const handleNextClick = async () => {
@@ -56,6 +62,8 @@ const FormWizard = ({
     }
 
     set_current_index((value) => value + 1);
+
+    scrollToTop();
   };
 
   const handleNextButtonClick = () => {
@@ -68,6 +76,44 @@ const FormWizard = ({
     }
 
     set_current_index(target_index);
+
+    scrollToTop();
+  };
+
+  const getStepXPosition = (is_active: boolean, index: number): number => {
+    if (is_active) {
+      return 0;
+    }
+
+    if (index < current_index) {
+      return -32;
+    }
+
+    return 32;
+  };
+
+  const getStepOpacity = (is_active: boolean): number => {
+    if (is_active) {
+      return 1;
+    }
+
+    return 0;
+  };
+
+  const getStepClassName = (is_active: boolean): string => {
+    if (is_active) {
+      return 'relative';
+    }
+
+    return 'absolute inset-0';
+  };
+
+  const getStepPointerEvents = (is_active: boolean): 'auto' | 'none' => {
+    if (is_active) {
+      return 'auto';
+    }
+
+    return 'none';
   };
 
   const renderHeader = () => {
@@ -92,18 +138,18 @@ const FormWizard = ({
 
           return (
             <motion.div
-              key={(element.key as string) ?? `step-${index}`}
+              key={element.key ?? `step-${index}`}
               ref={(el) => {
                 step_refs.current[index] = el;
               }}
               initial={false}
               animate={{
-                x: is_active ? 0 : index < current_index ? -32 : 32,
-                opacity: is_active ? 1 : 0,
+                x: getStepXPosition(is_active, index),
+                opacity: getStepOpacity(is_active),
               }}
               transition={{ duration: 0.25 }}
-              className={is_active ? 'relative' : 'absolute inset-0'}
-              style={{ pointerEvents: is_active ? 'auto' : 'none' }}
+              className={getStepClassName(is_active)}
+              style={{ pointerEvents: getStepPointerEvents(is_active) }}
               aria-hidden={!is_active}
             >
               {element}
@@ -131,7 +177,7 @@ const FormWizard = ({
           total_steps={computed_total_steps}
           can_go_previous={current_index > 0}
           is_last_step={current_index === computed_total_steps - 1}
-          is_loading={!!is_loading}
+          is_loading={is_loading}
           on_previous_click={handlePreviousClick}
           on_next_click={handleNextButtonClick}
           on_dot_click={handleDotClick}

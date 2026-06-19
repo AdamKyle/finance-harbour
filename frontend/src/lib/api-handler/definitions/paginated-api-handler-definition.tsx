@@ -1,3 +1,4 @@
+import { PaginatedApiResponseDefinition } from 'lib/api-handler/definitions/paginated-api-response-definition';
 import { StateSetter } from 'lib/types/state-setter-type';
 
 export default interface PaginatedApiHandlerDefinition<
@@ -5,6 +6,7 @@ export default interface PaginatedApiHandlerDefinition<
   F extends Record<string, unknown>,
 > {
   data: T[];
+  response: PaginatedApiResponseDefinition<T[]> | null;
   error: unknown | null;
   loading: boolean;
   canLoadMore: boolean;

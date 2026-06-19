@@ -14,6 +14,7 @@ const Input = ({
   error,
   has_error,
   help_text,
+  inputMode,
   onChange,
   placeholder,
   required = false,
@@ -85,6 +86,7 @@ const Input = ({
         )}
         disabled={disabled}
         id={id}
+        inputMode={inputMode}
         name={name}
         onChange={onChange}
         placeholder={placeholder}

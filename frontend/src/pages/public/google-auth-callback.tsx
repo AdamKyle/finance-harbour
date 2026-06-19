@@ -17,7 +17,7 @@ const GoogleAuthCallback = () => {
     navigate_to_route: navigateToRoute,
   });
 
-  const isAuthenticating = Boolean(code) && !error;
+  const isAuthenticating = code !== null && !error;
 
   useEffect(() => {
     if (!code || hasSubmittedRequest.current) {
@@ -64,7 +64,7 @@ const GoogleAuthCallback = () => {
   };
 
   const getStatusTitle = (): string => {
-    if (getGoogleAuthErrorMessage()) {
+    if (getGoogleAuthErrorMessage() !== null) {
       return 'Google sign in could not continue';
     }
 
@@ -74,15 +74,23 @@ const GoogleAuthCallback = () => {
   const getStatusDescription = (): string => {
     const errorMessage = getGoogleAuthErrorMessage();
 
-    if (errorMessage) {
+    if (errorMessage !== null) {
       return errorMessage;
     }
 
     return 'Please wait while Finance Harbour finishes signing you in with Google.';
   };
 
+  const getStatusIconClassName = (): string => {
+    if (loading || isAuthenticating) {
+      return 'fa-solid fa-arrows-rotate animate-spin';
+    }
+
+    return 'fa-brands fa-google';
+  };
+
   const renderStatusIcon = (): ReactNode => {
-    if (getGoogleAuthErrorMessage()) {
+    if (getGoogleAuthErrorMessage() !== null) {
       return (
         <div className="bg-persian-plum-100 text-persian-plum-700 dark:bg-persian-plum-900 dark:text-persian-plum-100 flex h-14 w-14 items-center justify-center rounded-full">
           <i aria-hidden="true" className="fa-solid fa-triangle-exclamation" />
@@ -92,14 +100,7 @@ const GoogleAuthCallback = () => {
 
     return (
       <div className="bg-blue-bell-100 text-blue-bell-700 dark:bg-blue-bell-900 dark:text-blue-bell-100 flex h-14 w-14 items-center justify-center rounded-full">
-        <i
-          aria-hidden="true"
-          className={
-            loading || isAuthenticating
-              ? 'fa-solid fa-arrows-rotate animate-spin'
-              : 'fa-brands fa-google'
-          }
-        />
+        <i aria-hidden="true" className={getStatusIconClassName()} />
       </div>
     );
   };

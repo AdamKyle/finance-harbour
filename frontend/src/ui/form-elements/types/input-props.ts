@@ -11,6 +11,7 @@ export default interface InputProps {
   error?: string;
   has_error: boolean;
   help_text?: string;
+  inputMode?: 'decimal' | 'email' | 'numeric' | 'text';
   onChange?: ChangeEventHandler<HTMLInputElement>;
   placeholder?: string;
   required?: boolean;

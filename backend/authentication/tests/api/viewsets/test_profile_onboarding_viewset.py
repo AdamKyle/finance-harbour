@@ -32,7 +32,7 @@ class ProfileOnboardingViewSetTest(APITestCase):
         self.assertEqual(response.data["nickname"], "MyNick")
         self.assertEqual(response.data["profile_photo"], "avatar-1")
 
-    def test_authenticated_user_can_update_profile_photo(self) -> None:
+    def test_profile_onboarding_requires_nickname(self) -> None:
         user = User.objects.create_user(
             email="photo@example.com",
             password="StrongPassword123!",
@@ -47,11 +47,26 @@ class ProfileOnboardingViewSetTest(APITestCase):
             secure=True,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("nickname", response.data)
 
-        user.refresh_from_db()
+    def test_profile_onboarding_rejects_blank_nickname(self) -> None:
+        user = User.objects.create_user(
+            email="blank-required@example.com",
+            password="StrongPassword123!",
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
 
-        self.assertEqual(user.profile_photo, "avatar-2")
+        response = client.patch(
+            "/api/profile/onboarding/",
+            {"nickname": ""},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("nickname", response.data)
 
     def test_profile_onboarding_rejects_duplicate_non_empty_nickname(self) -> None:
         User.objects.create_user(
@@ -80,32 +95,6 @@ class ProfileOnboardingViewSetTest(APITestCase):
         user.refresh_from_db()
 
         self.assertEqual(user.nickname, "OriginalNick")
-
-    def test_profile_onboarding_allows_blank_nickname(self) -> None:
-        User.objects.create_user(
-            email="existing-blank-nickname@example.com",
-            password="StrongPassword123!",
-        )
-        user = User.objects.create_user(
-            email="blank-nickname@example.com",
-            password="StrongPassword123!",
-            nickname="NicknameToClear",
-        )
-        client = APIClient()
-        client.force_authenticate(user=user)
-
-        response = client.patch(
-            "/api/profile/onboarding/",
-            {"nickname": ""},
-            format="json",
-            secure=True,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        user.refresh_from_db()
-
-        self.assertEqual(user.nickname, "")
 
     def test_invalid_profile_data_does_not_mutate_user(self) -> None:
         user = User.objects.create_user(

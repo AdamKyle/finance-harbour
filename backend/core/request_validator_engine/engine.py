@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sized
+from collections.abc import Collection, Mapping, Sized
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
@@ -77,74 +77,164 @@ class RequestValidatorEngine:
         validation_rule: ValidationRule,
     ) -> str | None:
         if isinstance(validation_rule, str):
-            if validation_rule in {"required", "nullable"}:
-                return None
-
-            if validation_rule == "string":
-                if not isinstance(field_value, str):
-                    return self._message(field_name, validation_rule)
-
-                return None
-
-            if validation_rule == "integer":
-                if not isinstance(field_value, int) or isinstance(field_value, bool):
-                    return self._message(field_name, validation_rule)
-
-                return None
-
-            if validation_rule == "boolean":
-                if not isinstance(field_value, bool):
-                    return self._message(field_name, validation_rule)
-
-                return None
-
-            if validation_rule == "list":
-                if not isinstance(field_value, list):
-                    return self._message(field_name, validation_rule)
-
-                return None
-
-            if validation_rule == "dict":
-                if not isinstance(field_value, dict):
-                    return self._message(field_name, validation_rule)
-
-                return None
-
-            if validation_rule == "email":
-                if not isinstance(field_value, str):
-                    return self._message(field_name, validation_rule)
-
-                try:
-                    validate_email(field_value)
-                except DjangoValidationError:
-                    return self._message(field_name, validation_rule)
-
-                return None
+            return self._validate_simple_rule(
+                field_name,
+                field_value,
+                validation_rule,
+            )
 
         rule_name, rule_value = validation_rule
 
-        if rule_name == "max_length":
-            if not isinstance(field_value, Sized) or len(field_value) > rule_value:
+        return self._validate_parameterized_rule(
+            field_name,
+            field_value,
+            rule_name,
+            rule_value,
+        )
+
+    def _validate_simple_rule(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_name: str,
+    ) -> str | None:
+        if rule_name in {"required", "nullable"}:
+            return None
+
+        type_rules: dict[str, type[object]] = {
+            "string": str,
+            "boolean": bool,
+            "list": list,
+            "dict": dict,
+        }
+        expected_type = type_rules.get(rule_name)
+
+        if expected_type is not None:
+            if not isinstance(field_value, expected_type):
                 return self._message(field_name, rule_name)
 
             return None
 
-        if rule_name == "min_length":
-            if not isinstance(field_value, Sized) or len(field_value) < rule_value:
-                return self._message(field_name, rule_name)
+        if rule_name == "integer":
+            return self._validate_integer_rule(field_name, field_value)
 
-            return None
-
-        if rule_name == "choices":
-            if field_value not in rule_value:
-                return self._message(field_name, rule_name)
-
-            return None
-
-        if rule_name == "unique" and self._value_exists(field_value, rule_value):
-            return self._message(field_name, rule_name)
+        if rule_name == "email":
+            return self._validate_email_rule(field_name, field_value)
 
         return None
+
+    def _validate_integer_rule(
+        self,
+        field_name: str,
+        field_value: object,
+    ) -> str | None:
+        if not isinstance(field_value, int) or isinstance(field_value, bool):
+            return self._message(field_name, "integer")
+
+        return None
+
+    def _validate_email_rule(
+        self,
+        field_name: str,
+        field_value: object,
+    ) -> str | None:
+        if not isinstance(field_value, str):
+            return self._message(field_name, "email")
+
+        try:
+            validate_email(field_value)
+        except DjangoValidationError:
+            return self._message(field_name, "email")
+
+        return None
+
+    def _validate_parameterized_rule(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_name: str,
+        rule_value: object,
+    ) -> str | None:
+        match rule_name:
+            case "max_length":
+                return self._validate_max_length(field_name, field_value, rule_value)
+            case "min_length":
+                return self._validate_min_length(field_name, field_value, rule_value)
+            case "min_value":
+                return self._validate_min_value(field_name, field_value, rule_value)
+            case "choices":
+                return self._validate_choices(field_name, field_value, rule_value)
+            case "unique":
+                return self._validate_unique(field_name, field_value, rule_value)
+
+        return None
+
+    def _validate_max_length(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_value: object,
+    ) -> str | None:
+        if not isinstance(rule_value, int):
+            return self._message(field_name, "max_length")
+
+        if not isinstance(field_value, Sized) or len(field_value) > rule_value:
+            return self._message(field_name, "max_length")
+
+        return None
+
+    def _validate_min_length(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_value: object,
+    ) -> str | None:
+        if not isinstance(rule_value, int):
+            return self._message(field_name, "min_length")
+
+        if not isinstance(field_value, Sized) or len(field_value) < rule_value:
+            return self._message(field_name, "min_length")
+
+        return None
+
+    def _validate_min_value(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_value: object,
+    ) -> str | None:
+        if not isinstance(rule_value, int):
+            return self._message(field_name, "min_value")
+
+        if not isinstance(field_value, int) or field_value < rule_value:
+            return self._message(field_name, "min_value")
+
+        return None
+
+    def _validate_choices(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_value: object,
+    ) -> str | None:
+        if not isinstance(rule_value, Collection) or field_value not in rule_value:
+            return self._message(field_name, "choices")
+
+        return None
+
+    def _validate_unique(
+        self,
+        field_name: str,
+        field_value: object,
+        rule_value: object,
+    ) -> str | None:
+        if not isinstance(rule_value, UniqueRuleOptions):
+            return None
+
+        if not self._value_exists(field_value, rule_value):
+            return None
+
+        return self._message(field_name, "unique")
 
     def _value_exists(
         self,
@@ -180,6 +270,7 @@ class RequestValidatorEngine:
             "email": "Enter a valid email address.",
             "max_length": "This field is too long.",
             "min_length": "This field is too short.",
+            "min_value": "This field is below the minimum value.",
             "choices": "Select a valid choice.",
             "unique": "This value is already in use.",
         }

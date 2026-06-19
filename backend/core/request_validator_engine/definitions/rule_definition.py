@@ -24,7 +24,7 @@ type SimpleValidationRule = Literal[
     "email",
 ]
 type ParameterizedValidationRule = (
-    tuple[Literal["max_length", "min_length"], int]
+    tuple[Literal["max_length", "min_length", "min_value"], int]
     | tuple[Literal["choices"], Collection[object]]
     | tuple[Literal["unique"], UniqueRuleOptions]
 )

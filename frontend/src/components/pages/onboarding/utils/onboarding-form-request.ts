@@ -1,7 +1,9 @@
 import { DebtEntryFormState } from 'components/pages/onboarding/types/debt-entry-form-state';
 import { DebtStepFormState } from 'components/pages/onboarding/types/debt-step-form-state';
 import { ExpenseStepFormState } from 'components/pages/onboarding/types/expense-step-form-state';
+import { ImportantExpensesStepFormState } from 'components/pages/onboarding/types/important-expenses-step-form-state';
 import { IncomeStepFormState } from 'components/pages/onboarding/types/income-step-form-state';
+import { LeftOverWarningStepFormState } from 'components/pages/onboarding/types/left-over-warning-step-form-state';
 import { MiscExpenseEntryFormState } from 'components/pages/onboarding/types/misc-expense-entry-form-state';
 import { OnboardingFormData } from 'components/pages/onboarding/types/onboarding-form-data';
 import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
@@ -59,6 +61,21 @@ const getProfilePhoto = (
   return submittedProfilePhoto;
 };
 
+const getStringList = (
+  submittedData: Record<string, unknown>,
+  fieldName: string
+): string[] => {
+  const submittedValue = submittedData[fieldName];
+
+  if (!Array.isArray(submittedValue)) {
+    return [];
+  }
+
+  return submittedValue.filter(
+    (listValue): listValue is string => typeof listValue === 'string'
+  );
+};
+
 /**
  * Creates the initial onboarding request data.
  *
@@ -90,6 +107,12 @@ export const createInitialOnboardingFormRequest = (): OnboardingFormData => ({
     car_payment_dollars: '',
     insurance_dollars: '',
     misc_expenses: [],
+  },
+  important_expenses: {
+    selected_keys: [],
+  },
+  left_over_warning: {
+    left_over_warning_amount_dollars: '0.00',
   },
 });
 
@@ -250,6 +273,57 @@ export const hydrateExpenseFormRequest = (
 };
 
 /**
+ * Hydrates selected important-expense keys from persisted progress.
+ *
+ * Non-string values are discarded so selection state stays type safe.
+ *
+ * @param submittedValue - Persisted important-expense progress.
+ * @returns A safe important-expense request.
+ * @throws This function does not throw.
+ */
+export const hydrateImportantExpensesFormRequest = (
+  submittedValue: unknown
+): ImportantExpensesStepFormState => {
+  if (!isRecord(submittedValue)) {
+    return createInitialOnboardingFormRequest().important_expenses;
+  }
+
+  return {
+    selected_keys: getStringList(submittedValue, 'selected_keys'),
+  };
+};
+
+/**
+ * Hydrates the left-over warning threshold from persisted progress.
+ *
+ * Missing values use the zero-dollar default.
+ *
+ * @param submittedValue - Persisted threshold progress.
+ * @returns A safe warning-threshold request.
+ * @throws This function does not throw.
+ */
+export const hydrateLeftOverWarningFormRequest = (
+  submittedValue: unknown
+): LeftOverWarningStepFormState => {
+  if (!isRecord(submittedValue)) {
+    return createInitialOnboardingFormRequest().left_over_warning;
+  }
+
+  const submittedAmount = getStringValue(
+    submittedValue,
+    'left_over_warning_amount_dollars'
+  );
+
+  if (submittedAmount === '') {
+    return createInitialOnboardingFormRequest().left_over_warning;
+  }
+
+  return {
+    left_over_warning_amount_dollars: submittedAmount,
+  };
+};
+
+/**
  * Hydrates the complete onboarding request from persisted progress.
  *
  * The returned object is ready to become the API hook's editable request
@@ -271,6 +345,12 @@ export const hydrateOnboardingFormRequest = (
     debts: hydrateDebtFormRequest(submittedValue.debts),
     income: hydrateIncomeFormRequest(submittedValue.income),
     expenses: hydrateExpenseFormRequest(submittedValue.expenses),
+    important_expenses: hydrateImportantExpensesFormRequest(
+      submittedValue.important_expenses
+    ),
+    left_over_warning: hydrateLeftOverWarningFormRequest(
+      submittedValue.left_over_warning
+    ),
   };
 };
 

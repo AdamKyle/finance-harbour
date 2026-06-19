@@ -141,6 +141,31 @@ class OnboardingProgressViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["current_step"], "income")
 
+    def test_finished_step_is_restored_until_completion_is_requested(self) -> None:
+        user = User.objects.create_user(
+            email="finished-restore@example.com",
+            password="StrongPassword123!",
+        )
+        OnboardingProgress.objects.create(
+            user=user,
+            current_step="conclude",
+            completed_steps=[
+                "profile",
+                "debts",
+                "income",
+                "expenses",
+                "important_expenses",
+                "left_over_warning",
+            ],
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.get("/api/onboarding/progress/", secure=True)
+
+        self.assertEqual(response.data["current_step"], "conclude")
+        self.assertFalse(response.data["is_complete"])
+
     def test_anonymous_get_rejected(self) -> None:
         client = APIClient()
 

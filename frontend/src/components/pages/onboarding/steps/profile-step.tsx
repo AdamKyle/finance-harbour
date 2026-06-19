@@ -5,7 +5,7 @@ import ProfileStepProps from 'components/pages/onboarding/types/profile-step-pro
 
 import Input from 'ui/form-elements/input';
 
-const ProfileStep = ({ request, setRequest }: ProfileStepProps) => {
+const ProfileStep = ({ request, setRequest, error }: ProfileStepProps) => {
   const defaultPhoto = {
     id: 'avatar-d',
     label: 'Dog outdoors',
@@ -48,9 +48,9 @@ const ProfileStep = ({ request, setRequest }: ProfileStepProps) => {
     <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <p className="text-storm-dust-600 dark:text-storm-dust-300 text-sm">
-          Lets start with an optional avatar and nick name. Don't worry, only
-          you can see these details. Next we'll dive right into the debt profile
-          setup and help you tackle those debts.
+          Lets start with an avatar and nickname. Don't worry, only you can see
+          these details. Next we'll dive right into the debt profile setup and
+          help you tackle those debts.
         </p>
       </div>
 
@@ -106,12 +106,14 @@ const ProfileStep = ({ request, setRequest }: ProfileStepProps) => {
 
       <Input
         id="onboarding-nickname"
-        label="Nickname (optional)"
+        label="Nickname"
         name="nickname"
         type="text"
         placeholder="e.g. Alex"
         value={request.nickname}
-        has_error={false}
+        error={error}
+        has_error={error !== undefined}
+        required
         onChange={handleNicknameChange}
       />
     </div>

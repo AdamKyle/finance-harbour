@@ -22,6 +22,49 @@ const FormWizardNav = ({
     [total_steps]
   );
 
+  const getIconNode = () => {
+    if (!is_loading || !render_loading_icon) {
+      return undefined;
+    }
+
+    return render_loading_icon();
+  };
+
+  const getActionLabel = (): string => {
+    if (is_last_step) {
+      return 'Finish';
+    }
+
+    return 'Next';
+  };
+
+  const getActionVariant = (): ButtonVariant => {
+    if (is_last_step) {
+      return ButtonVariant.PRIMARY;
+    }
+
+    return ButtonVariant.SUCCESS;
+  };
+
+  const getDotAriaCurrent = (is_active: boolean): 'true' | undefined => {
+    if (is_active) {
+      return 'true';
+    }
+
+    return undefined;
+  };
+
+  const getDotClassName = (is_active: boolean): string => {
+    const base =
+      'h-3 w-3 rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-danube-500';
+
+    if (is_active) {
+      return clsx(base, 'bg-gray-500 dark:bg-gray-400');
+    }
+
+    return clsx(base, 'bg-gray-300 dark:bg-gray-600');
+  };
+
   const renderPrevious = () => {
     return (
       <Button
@@ -34,20 +77,13 @@ const FormWizardNav = ({
   };
 
   const renderNext = () => {
-    const icon_node =
-      is_loading && render_loading_icon ? render_loading_icon() : undefined;
-    const action_label = is_last_step ? 'Finish' : 'Next';
-    const action_variant = is_last_step
-      ? ButtonVariant.PRIMARY
-      : ButtonVariant.SUCCESS;
-
     return (
       <IconButton
-        disabled={!!is_loading}
+        disabled={is_loading === true}
         on_click={on_next_click}
-        label={action_label}
-        variant={action_variant}
-        icon={icon_node}
+        label={getActionLabel()}
+        variant={getActionVariant()}
+        icon={getIconNode()}
         show_label
       />
     );
@@ -76,14 +112,11 @@ const FormWizardNav = ({
             <button
               key={`dot-${index_value}`}
               type="button"
-              aria-current={is_active ? 'true' : undefined}
+              aria-current={getDotAriaCurrent(is_active)}
               aria-disabled={is_disabled}
               disabled={is_disabled}
               onClick={handleDotClick}
-              className={clsx(
-                'h-3 w-3 rounded-full transition-colors duration-300 focus:outline-none',
-                is_active ? 'bg-danube-600' : 'bg-gray-300 dark:bg-gray-600'
-              )}
+              className={getDotClassName(is_active)}
             />
           );
         })}

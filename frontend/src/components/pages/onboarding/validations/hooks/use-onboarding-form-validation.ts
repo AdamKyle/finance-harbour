@@ -9,12 +9,33 @@ import {
   DebtFieldErrorsDefinition,
   ExpenseFieldErrorsDefinition,
   IncomeFieldErrorsDefinition,
+  LeftOverWarningFieldErrorsDefinition,
   MiscExpenseFieldErrorsDefinition,
+  ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { UseOnboardingFormValidationDefinition } from 'components/pages/onboarding/validations/hooks/definitions/use-onboarding-form-validation-definition';
 
 export const useOnboardingFormValidation =
   (): UseOnboardingFormValidationDefinition => {
+    const validateProfileStep: UseOnboardingFormValidationDefinition['validateProfileStep'] =
+      (profileForm) => {
+        const fieldErrors: ProfileFieldErrorsDefinition = {};
+
+        if (profileForm.nickname.trim() === '') {
+          fieldErrors.nickname = 'Enter a nickname.';
+        }
+
+        if (profileForm.nickname.length > 100) {
+          fieldErrors.nickname = 'Nickname must be 100 characters or fewer.';
+        }
+
+        return {
+          is_valid: Object.keys(fieldErrors).length === 0,
+          step_error: '',
+          field_errors: fieldErrors,
+        };
+      };
+
     const validateDebtStep: UseOnboardingFormValidationDefinition['validateDebtStep'] =
       (debtForm) => {
         if (debtForm.debts.length === 0) {
@@ -219,9 +240,33 @@ export const useOnboardingFormValidation =
         };
       };
 
+    const validateLeftOverWarningStep: UseOnboardingFormValidationDefinition['validateLeftOverWarningStep'] =
+      (warningForm) => {
+        const fieldErrors: LeftOverWarningFieldErrorsDefinition = {};
+        const validationResult = validateDollarInput(
+          warningForm.left_over_warning_amount_dollars
+        );
+
+        if (
+          warningForm.left_over_warning_amount_dollars === '' ||
+          !validationResult.valid
+        ) {
+          fieldErrors.left_over_warning_amount_dollars =
+            validationResult.error ?? 'Enter a warning amount.';
+        }
+
+        return {
+          is_valid: Object.keys(fieldErrors).length === 0,
+          step_error: '',
+          field_errors: fieldErrors,
+        };
+      };
+
     return {
+      validateProfileStep,
       validateDebtStep,
       validateIncomeStep,
       validateExpenseStep,
+      validateLeftOverWarningStep,
     };
   };

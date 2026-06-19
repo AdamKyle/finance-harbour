@@ -33,3 +33,11 @@ export interface OnboardingFormErrorsDefinition {
   income: IncomeFieldErrorsDefinition;
   expenses: ExpenseFieldErrorsDefinition;
 }
+
+export interface ProfileFieldErrorsDefinition {
+  nickname?: string;
+}
+
+export interface LeftOverWarningFieldErrorsDefinition {
+  left_over_warning_amount_dollars?: string;
+}

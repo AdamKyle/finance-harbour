@@ -1,6 +1,6 @@
 import type FormErrorProps from './types/form-error-props';
 
-const FormError = ({ id, message = null }: FormErrorProps) => {
+const FormError = ({ id, message }: FormErrorProps) => {
   if (!message) {
     return null;
   }
