@@ -1,8 +1,10 @@
-import { AxiosErrorDefinition } from 'api-handler/definitions/axios-error-definition';
 import { ReactNode } from 'react';
+
+import { AxiosErrorDefinition } from 'lib/api-handler/definitions/axios-error-definition';
 
 export default interface FormWizardProps {
   total_steps: number;
+  initial_index?: number;
   name?: string;
   is_loading?: boolean;
   render_loading_icon?: () => ReactNode;

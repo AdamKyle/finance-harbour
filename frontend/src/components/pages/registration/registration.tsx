@@ -22,11 +22,11 @@ const Registration = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const isSubmitDisabled = email === '' || password === '' || loading;
-
-  const getErrorMessage = (fieldError?: string | string[]): string | null => {
+  const getErrorMessage = (
+    fieldError?: string | string[]
+  ): string | undefined => {
     if (!fieldError) {
-      return null;
+      return undefined;
     }
 
     if (Array.isArray(fieldError)) {
@@ -35,6 +35,10 @@ const Registration = () => {
 
     return fieldError;
   };
+
+  const isSubmitDisabled = email === '' || password === '' || loading;
+  const emailError = getErrorMessage(error?.email);
+  const passwordError = getErrorMessage(error?.password);
 
   const handleChangeEmail = (event: ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
@@ -137,7 +141,8 @@ const Registration = () => {
             >
               <Input
                 autoComplete="email"
-                error={getErrorMessage(error?.email)}
+                error={emailError}
+                has_error={emailError !== undefined}
                 id="register-email"
                 label="Email"
                 name="email"
@@ -150,7 +155,8 @@ const Registration = () => {
 
               <Input
                 autoComplete="new-password"
-                error={getErrorMessage(error?.password)}
+                error={passwordError}
+                has_error={passwordError !== undefined}
                 id="register-password"
                 label="Password"
                 name="password"

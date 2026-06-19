@@ -48,6 +48,7 @@ const FormWizardNav = ({
         label={action_label}
         variant={action_variant}
         icon={icon_node}
+        show_label
       />
     );
   };

@@ -22,11 +22,11 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const isSubmitDisabled = email === '' || password === '' || loading;
-
-  const getErrorMessage = (fieldError?: string | string[]): string | null => {
+  const getErrorMessage = (
+    fieldError?: string | string[]
+  ): string | undefined => {
     if (!fieldError) {
-      return null;
+      return undefined;
     }
 
     if (Array.isArray(fieldError)) {
@@ -35,6 +35,10 @@ const Login = () => {
 
     return fieldError;
   };
+
+  const isSubmitDisabled = email === '' || password === '' || loading;
+  const emailError = getErrorMessage(error?.email);
+  const passwordError = getErrorMessage(error?.password);
 
   const handleChangeEmail = (event: ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
@@ -134,7 +138,8 @@ const Login = () => {
             <form className="flex flex-col gap-5" onSubmit={handleSubmitLogin}>
               <Input
                 autoComplete="email"
-                error={getErrorMessage(error?.email)}
+                error={emailError}
+                has_error={emailError !== undefined}
                 id="login-email"
                 label="Email"
                 name="email"
@@ -147,7 +152,8 @@ const Login = () => {
 
               <Input
                 autoComplete="current-password"
-                error={getErrorMessage(error?.password)}
+                error={passwordError}
+                has_error={passwordError !== undefined}
                 id="login-password"
                 label="Password"
                 name="password"

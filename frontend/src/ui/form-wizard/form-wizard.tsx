@@ -9,6 +9,7 @@ import FormWizardProps from 'ui/form-wizard/types/form-wizard-props';
 
 const FormWizard = ({
   total_steps,
+  initial_index = 0,
   name,
   is_loading,
   render_loading_icon,
@@ -16,7 +17,7 @@ const FormWizard = ({
   children,
   form_error,
 }: FormWizardProps) => {
-  const [current_index, set_current_index] = useState(0);
+  const [current_index, set_current_index] = useState(initial_index);
   const step_refs = useRef<Array<HTMLDivElement | null>>([]);
 
   const step_elements = useMemo(
@@ -141,8 +142,8 @@ const FormWizard = ({
   };
 
   return (
-    <div className="container my-4 flex items-center justify-center px-4">
-      <div className="w-full max-w-5xl">
+    <div className="mx-auto my-4 w-full px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl">
         <Card>
           <div className="space-y-4">
             {renderHeader()}

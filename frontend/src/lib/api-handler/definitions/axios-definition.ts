@@ -24,4 +24,17 @@ export default interface AxiosDefinition {
     data: D,
     config?: AxiosRequestConfig & { params?: C }
   ): Promise<T>;
+
+  /**
+   * Handles PATCH requests.
+   *
+   * @param url - The endpoint to send the PATCH request to.
+   * @param data - The partial data payload to include in the request body.
+   * @param config - Optional Axios configuration, including query parameters.
+   */
+  patch<T, C, D>(
+    url: string,
+    data: D,
+    config?: AxiosRequestConfig & { params?: C }
+  ): Promise<T>;
 }

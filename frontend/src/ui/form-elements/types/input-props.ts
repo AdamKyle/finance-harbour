@@ -5,8 +5,12 @@ export default interface InputProps {
   label: string;
   name: string;
   type: 'email' | 'password' | 'text';
+  additional_css?: string;
   autoComplete?: string;
-  error?: string | null;
+  disabled?: boolean;
+  error?: string;
+  has_error: boolean;
+  help_text?: string;
   onChange?: ChangeEventHandler<HTMLInputElement>;
   placeholder?: string;
   required?: boolean;

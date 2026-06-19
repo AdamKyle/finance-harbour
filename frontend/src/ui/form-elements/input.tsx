@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 
+import FormError from './form-error';
 import type InputProps from './types/input-props';
 
 const Input = ({
@@ -7,15 +8,50 @@ const Input = ({
   label,
   name,
   type,
+  additional_css,
   autoComplete,
-  error = null,
+  disabled = false,
+  error,
+  has_error,
+  help_text,
   onChange,
   placeholder,
   required = false,
   value,
 }: InputProps) => {
-  const hasError = Boolean(error);
   const errorId = `${id}-error`;
+  const helpTextId = `${id}-help`;
+
+  const getDescribedBy = () => {
+    if (!help_text && !has_error) {
+      return undefined;
+    }
+
+    if (help_text && !has_error) {
+      return helpTextId;
+    }
+
+    if (!help_text && has_error) {
+      return errorId;
+    }
+
+    return `${helpTextId} ${errorId}`;
+  };
+
+  const renderHelpText = () => {
+    if (!help_text) {
+      return null;
+    }
+
+    return (
+      <p
+        className="text-storm-dust-600 dark:text-storm-dust-300 text-sm"
+        id={helpTextId}
+      >
+        {help_text}
+      </p>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -27,27 +63,27 @@ const Input = ({
       </label>
 
       <input
-        aria-describedby={hasError ? errorId : undefined}
-        aria-invalid={hasError}
+        aria-describedby={getDescribedBy()}
+        aria-invalid={has_error}
         aria-required={required}
         autoComplete={autoComplete}
         className={clsx(
           'w-full rounded-lg border bg-white px-4 py-3',
           'text-storm-dust-950 text-base shadow-sm transition',
           'placeholder:text-storm-dust-500',
-          'focus:ring-2 focus:outline-hidden',
+          'focus-visible:ring-2 focus-visible:outline-none',
+          'disabled:cursor-not-allowed disabled:opacity-60',
           'dark:bg-storm-dust-900 dark:text-storm-dust-50',
           'dark:placeholder:text-storm-dust-400',
-          hasError
-            ? [
-                'border-persian-plum-500 focus:border-persian-plum-500 focus:ring-persian-plum-300',
-                'dark:border-persian-plum-400 dark:focus:border-persian-plum-400 dark:focus:ring-persian-plum-600',
-              ]
-            : [
-                'border-storm-dust-300 focus:border-blue-bell-500 focus:ring-blue-bell-400',
-                'dark:border-storm-dust-700 dark:focus:border-blue-bell-400 dark:focus:ring-blue-bell-600',
-              ]
+          {
+            'border-persian-plum-500 focus-visible:border-persian-plum-500 focus-visible:ring-persian-plum-300 dark:border-persian-plum-400 dark:focus-visible:border-persian-plum-400 dark:focus-visible:ring-persian-plum-600':
+              has_error,
+            'border-storm-dust-300 focus-visible:border-blue-bell-500 focus-visible:ring-blue-bell-400 dark:border-storm-dust-700 dark:focus-visible:border-blue-bell-400 dark:focus-visible:ring-blue-bell-600':
+              !has_error,
+          },
+          additional_css
         )}
+        disabled={disabled}
         id={id}
         name={name}
         onChange={onChange}
@@ -57,14 +93,8 @@ const Input = ({
         value={value}
       />
 
-      {hasError && (
-        <p
-          className="text-persian-plum-600 dark:text-persian-plum-400 text-sm font-medium"
-          id={errorId}
-        >
-          {error}
-        </p>
-      )}
+      {renderHelpText()}
+      <FormError id={errorId} message={error} />
     </div>
   );
 };

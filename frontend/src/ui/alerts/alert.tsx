@@ -50,6 +50,7 @@ export const Alert = (props: AlertProps) => {
 
     return (
       <div
+        role="alert"
         className={clsx(
           baseStyle(),
           variantStyle(props.variant),

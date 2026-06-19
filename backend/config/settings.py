@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     # Core Apps
     "authentication",
+    "core",
+    "onboarding",
+    "debt_profile",
 ]
 
 MIDDLEWARE = [
@@ -38,6 +41,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.ownership_middleware.OwnershipMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

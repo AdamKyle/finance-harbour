@@ -40,6 +40,21 @@ export default class ApiHandler implements AxiosDefinition {
     return response.data;
   }
 
+  async patch<T, C, D>(
+    url: string,
+    data: D,
+    config: AxiosRequestConfig & { params?: C } = {}
+  ): Promise<T> {
+    this.setRequestConfig(config);
+    const modifiedUrl = this.addApiPrefix(url);
+    const response: AxiosResponse<T> = await axios.patch<T>(
+      modifiedUrl,
+      data,
+      config
+    );
+    return response.data;
+  }
+
   /**
    * Add `/api` prefix to the URL if it's not already there.
    *

@@ -13,6 +13,7 @@ class User(AbstractBaseUser):
     first_name = models.CharField(max_length=150, blank=True, default="")
     last_name = models.CharField(max_length=150, blank=True, default="")
     profile_photo = models.CharField(max_length=100, blank=True, default="")
+    nickname = models.CharField(max_length=100, blank=True, default="")
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
     completed_onboarding = models.BooleanField(default=False)
@@ -27,6 +28,11 @@ class User(AbstractBaseUser):
             models.UniqueConstraint(
                 Lower("email"),
                 name="unique_user_email_case_insensitive",
+            ),
+            models.UniqueConstraint(
+                Lower("nickname"),
+                condition=~models.Q(nickname=""),
+                name="unique_user_nickname_case_insensitive_when_present",
             ),
         ]
 

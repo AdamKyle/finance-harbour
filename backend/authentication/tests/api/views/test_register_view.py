@@ -20,7 +20,12 @@ class RegisterViewTest(APITestCase):
         )
 
         client = APIClient(enforce_csrf_checks=True)
-        csrf_token = self._get_csrf_token(client)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
+
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
+
+        csrf_token = str(csrf_response.data["csrfToken"])
 
         response = client.post(
             "/api/auth/registration/",
@@ -45,7 +50,12 @@ class RegisterViewTest(APITestCase):
         )
 
         client = APIClient(enforce_csrf_checks=True)
-        csrf_token = self._get_csrf_token(client)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
+
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
+
+        csrf_token = str(csrf_response.data["csrfToken"])
 
         response = client.post(
             "/api/auth/registration/",
@@ -76,7 +86,12 @@ class RegisterViewTest(APITestCase):
         )
 
         client = APIClient(enforce_csrf_checks=True)
-        csrf_token = self._get_csrf_token(client)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
+
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
+
+        csrf_token = str(csrf_response.data["csrfToken"])
 
         response = client.post(
             "/api/auth/registration/",
@@ -108,7 +123,12 @@ class RegisterViewTest(APITestCase):
         )
 
         client = APIClient(enforce_csrf_checks=True)
-        csrf_token = self._get_csrf_token(client)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
+
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
+
+        csrf_token = str(csrf_response.data["csrfToken"])
 
         response = client.post(
             "/api/auth/registration/",
@@ -129,7 +149,12 @@ class RegisterViewTest(APITestCase):
 
     def test_registration_rejects_weak_password(self) -> None:
         client = APIClient(enforce_csrf_checks=True)
-        csrf_token = self._get_csrf_token(client)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
+
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
+
+        csrf_token = str(csrf_response.data["csrfToken"])
 
         response = client.post(
             "/api/auth/registration/",
@@ -147,10 +172,26 @@ class RegisterViewTest(APITestCase):
         self.assertIn("password", response.data)
         self.assertEqual(User.objects.count(), 0)
 
-    def _get_csrf_token(self, client: APIClient) -> str:
-        response = client.get("/api/auth/csrf/", secure=True)
+    def test_registration_creates_a_user(self) -> None:
+        client = APIClient(enforce_csrf_checks=True)
+        csrf_response = client.get("/api/auth/csrf/", secure=True)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(settings.CSRF_COOKIE_NAME, response.cookies)
+        self.assertEqual(csrf_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.CSRF_COOKIE_NAME, csrf_response.cookies)
 
-        return str(response.data["csrfToken"])
+        csrf_token = str(csrf_response.data["csrfToken"])
+
+        response = client.post(
+            "/api/auth/registration/",
+            {
+                "email": "created@example.com",
+                "password": "StrongPassword123!",
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=csrf_token,
+            HTTP_ORIGIN=self.secure_origin,
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email="created@example.com").exists())

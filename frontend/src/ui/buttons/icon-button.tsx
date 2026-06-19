@@ -22,6 +22,14 @@ const IconButton = ({
 }: IconButtonProps) => {
   const variantClasses = iconButtonVariantStyles(variant);
 
+  const renderIcon = () => {
+    if (typeof icon === 'string') {
+      return <i className={icon} aria-hidden="true" />;
+    }
+
+    return icon;
+  };
+
   return (
     <button
       type="button"
@@ -37,7 +45,7 @@ const IconButton = ({
       disabled={disabled}
     >
       <span className={clsx(iconButtonIconBaseStyles(), variantClasses.icon)}>
-        <i className={icon} aria-hidden="true" />
+        {renderIcon()}
       </span>
 
       {show_label && <span>{label}</span>}
