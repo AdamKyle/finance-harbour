@@ -24,7 +24,7 @@ Expected examples:
 ui/form-elements/input
 ui/form-elements/select
 
-If a new form element is needed, create it in the UI form elements folder before using it across forms.
+Do not create a new form element by default. First inspect and reuse `Input`, `MoneyInput`, `Select`, and `FormError`. A new shared form primitive requires explicit task scope and proof that the existing controls cannot represent the required behavior through composition or a compatible extension.
 
 ## Required shared form elements
 
@@ -33,7 +33,7 @@ The frontend must have shared generic components for:
 - Input
 - Select
 
-Additional form elements should follow the same UI folder pattern when needed.
+Additional form elements may follow the same UI folder pattern only when explicitly required and justified by concrete repository usage.
 
 ## Form element requirements
 
@@ -130,7 +130,7 @@ Avoid patterns like EXPENSE_FIELDS for simple step forms.
 
 Build the form fields inline in the component so the form is readable and explicit.
 
-If a form becomes too large, extract a real child component or hook instead of hiding the fields behind a static config array.
+If a form becomes too large, first reuse existing components and local render helpers. Extract a child component or hook only for a concrete responsibility supported by the feature, not as a speculative abstraction.
 
 ## When abstraction is required
 
@@ -152,3 +152,10 @@ Keep form elements generic, accessible, mobile-first, clean, and overridable.
 Do not rebuild common inputs and selects inline across forms.
 
 Do not use calc or overflow-hidden unless explicitly instructed.
+
+
+## Current no-duplication contract
+
+The current frontend centralizes generic text, money, select, and error form markup in `ui/form-elements/**`. Specialized feature buttons still exist locally for avatar and card selection.
+
+Preserve the generic form-element contract. A page or step composes existing form fields and owns only feature layout, values, handlers, and step-specific content. Do not create a new generic form component for a specialized button interaction.

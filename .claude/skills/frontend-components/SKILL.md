@@ -5,7 +5,7 @@ description: Use when adding or changing React components, UI primitives, compon
 
 # Frontend Components Skill
 
-Use this skill for React components, UI primitives, props, component folders, styles, and accessibility.
+Use this skill for React components, UI primitives, props, component folders, styles, and accessibility. Use `frontend-component-reuse-and-composition` first.
 
 ## Non-negotiable rules
 
@@ -15,7 +15,7 @@ Use this skill for React components, UI primitives, props, component folders, st
 - Keep style helper files under component-local `styles/**` where the current UI pattern uses them.
 - Use `clsx` for conditional class composition.
 - Use semantic elements and accessible labels.
-- Do not create giant components when smaller render helpers or child components fit the existing style.
+- Do not create giant components. Prefer existing components and local render helpers; create a child component only for a concrete distinct responsibility, never merely to reduce line count.
 
 ## Frontend Components Definition
 
@@ -131,3 +131,18 @@ Rules:
 - Return `ReactNode` where the existing pattern explicitly does so.
 - Let TypeScript infer return type when the surrounding file pattern does not require explicit return type.
 - Avoid `React.FC` unless the repo adopts it later.
+
+
+## Existing-component-first rule
+
+Before adding JSX, inspect the current component inventory and usages.
+
+The current reusable controls are the existing `Alert`, `Button`, `IconButton`, `LinkButton`, `Card`, `CardWithImage`, `ToggleDarkMode`, `FormError`, `Input`, `MoneyInput`, `Select`, `FormWizard`, `FormWizardNav`, `Step`, `HeroSection`, and `SectionWithTitle` implementations.
+
+Rules:
+
+- Reuse these actual files and their existing props/variants.
+- Do not recreate their markup or Tailwind classes in a page or feature component.
+- Do not add raw generic controls outside `ui/**` when an existing primitive covers the behavior. Specialized feature interactions may use local semantic HTML when existing component contracts cannot represent required refs, rich children, pressed state, or feature-specific layout.
+- Do not create a new generic component unless the task explicitly requires it and repository inspection proves composition or a compatible extension is insufficient.
+- Name every reused component and every inspected call site in the completion evidence.

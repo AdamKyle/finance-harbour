@@ -80,7 +80,7 @@ If the behavior is reusable across the app, extract it to a utility hook.
 
 Do not place reusable hook logic above the component.
 
-Do not place reusable hook logic inside the component just because only one component uses it right now.
+Do not predict future reuse. When only one component uses the behavior, keep it local unless it is an established cross-cutting concern or the existing architecture already places it in a hook.
 
 ## Accessibility
 
@@ -125,3 +125,16 @@ Hook definitions belong in `util/hooks/definitions`.
 Components should call utility hooks instead of owning reusable browser behavior inline.
 
 Scroll, focus, event, observer, and timing behavior must be accessible, typed, reusable, and cleaned up.
+
+
+## No speculative hooks
+
+Do not create examples such as `useFocusElement`, `useOutsideClick`, or `useDebouncedValue` merely because they might be useful later.
+
+Create or extract a utility hook only when:
+
+- there are multiple concrete consumers, or
+- the behavior is cross-cutting and already follows an existing utility-hook pattern, or
+- the task explicitly requires a reusable hook.
+
+Inspect current usages before moving logic. Preserve `useScrollToTop` as a real shared example because it has multiple current consumers.

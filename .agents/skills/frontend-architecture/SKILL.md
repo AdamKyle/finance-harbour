@@ -12,11 +12,12 @@ Use this skill for frontend folder structure, routing, layouts, providers, alias
 - Keep source under `frontend/src/`.
 - Use the existing aliases instead of deep relative imports when crossing folders.
 - Keep reusable UI in `ui/**`.
+- Search and compose existing `ui/**` and feature components before creating JSX or adding a component.
 - Keep app/domain services and contexts in `lib/**`.
 - Keep route declarations centralized through `finance-harbour-application.tsx` and `react-router/**` patterns.
 - Keep page wrappers in `pages/**` and larger page-specific components in `components/pages/**`.
 - Keep each component’s props in its own `types/**` interface file.
-- Keep API request/response/hook contracts in `definitions/**` files.
+- Keep API request/response/hook contracts in `definitions/**` files. Preserve the existing `deffinitions/**` spelling in configuration and service-container modules unless a dedicated migration task renames it everywhere.
 
 ## Application layout rules
 
@@ -56,7 +57,7 @@ frontend/src/
     pages/
     public-navigation/
   configuration/
-    definitions/
+    deffinitions/
     modular-container.ts
   layout/
   lib/
@@ -171,3 +172,18 @@ Rules:
 - Register cross-cutting services through modular containers.
 - Add new service registration functions to `configuration/modular-container.ts`.
 - Do not instantiate duplicate service singletons directly inside components.
+
+
+## Repository-grounded composition gate
+
+Use `frontend-component-reuse-and-composition` before any UI change.
+
+The current source centralizes reusable interactive controls under `ui/**`. Preserve that architecture:
+
+- do not add duplicate raw buttons, inputs, selects, or links in feature/page code
+- do not invent a parallel visual primitive
+- do not create a shared abstraction for a hypothetical future use
+- use thin route wrappers when an existing feature component owns the screen
+- extend an existing component only after inspecting every call site and only when the new behavior belongs to its current responsibility
+
+Any new component must have a concrete task-defined responsibility and must compose the existing UI primitives.

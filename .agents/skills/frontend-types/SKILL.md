@@ -46,15 +46,15 @@ lib/authentication/api/hooks/definitions/login-request-definition.ts
 lib/authentication/api/hooks/definitions/login-response-definition.ts
 lib/authentication/definitions/authentication-context-definition.ts
 lib/core/api/definitions/user-definition.ts
-configuration/definitions/modular-container-definition.ts
+configuration/deffinitions/modular-container-definition.ts
 ```
 
 Rules:
 
 - Component props go under `types/`.
 - API contracts and hook return/parameter contracts go under `definitions/`.
-- Preserve existing folder spelling where already present, including `definitions` in existing paths.
-- Use new `definitions` folders where the surrounding module already uses that spelling.
+- Preserve existing folder spelling where already present. The configuration and service-container modules currently use `deffinitions/**`; do not create a parallel `definitions/**` folder beside them.
+- Use `definitions/**` where the surrounding module already uses that spelling.
 - Do not mix prop interfaces into component files unless the component is genuinely one-off and the repo pattern changes.
 
 ### Interface rules

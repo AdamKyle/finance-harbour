@@ -22,15 +22,14 @@ Use the project command rules before running backend commands.
 
 After backend architecture changes, use the narrowest command set that validates the task.
 
-Default backend validation, when the user has not provided a narrower command, is:
+Default backend validation, when the user has not provided a narrower command, is run through Docker from the project root:
 
 ```bash
-cd backend
-python manage.py check
-ruff check .
-ruff format --check .
-coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test
-coverage report -m
+docker compose exec -T backend python manage.py check
+docker compose exec -T backend ruff check .
+docker compose exec -T backend ruff format --check .
+docker compose exec -T backend coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test
+docker compose exec -T backend coverage report -m
 ```
 
 If the prompt gives an exact backend test filter or exact command, run only that narrower command.
@@ -45,7 +44,7 @@ Do not run any command that applies migrations or directly changes the database 
 
 The backend lives under `backend/`.
 
-Observed project files:
+Observed project files and apps:
 
 ```text
 backend/
@@ -54,23 +53,13 @@ backend/
   Pipfile
   Pipfile.lock
   config/
-    settings.py
-    urls.py
-    asgi.py
-    wsgi.py
   authentication/
-    apps.py
-    urls.py
-    adapters/
-    api/
-      views/
-      viewsets/
-    managers/
-    migrations/
-    models/
-    serializers/
-    tests/
+  core/
+  onboarding/
+  debt_profile/
 ```
+
+The active domain architecture is not authentication-only. Inspect the owning app before placing code.
 
 ### Current app pattern
 
@@ -87,7 +76,7 @@ authentication/adapters/social_account_adapter.py
 authentication/urls.py
 ```
 
-Follow this pattern for new apps.
+Use the combined patterns from `authentication`, `core`, `onboarding`, and `debt_profile`; only create folders that the app responsibility actually needs.
 
 ### Concrete new app creation rules
 
@@ -128,10 +117,10 @@ Models may be created or changed when the task requires backend data structure c
 
 Migrations may be created when model changes require them.
 
-Allowed migration creation command from `backend/`:
+Allowed migration creation command from the repository root:
 
 ```bash
-python manage.py makemigrations <app_name>
+docker compose exec -T backend python manage.py makemigrations <app_name>
 ```
 
 Rules:
@@ -226,6 +215,8 @@ Current API root:
 ```python
 urlpatterns = [
     path("api/", include("authentication.urls")),
+    path("api/", include("onboarding.urls")),
+    path("api/", include("debt_profile.urls")),
 ]
 ```
 
@@ -256,3 +247,17 @@ Name-like fields must be unique at the correct scope unless the task explicitly 
 
 Optional unique string fields must use conditional constraints when multiple blank values are valid.
 
+
+
+## Security, efficiency, and consistency gates
+
+For backend architecture changes also use:
+
+- `backend-security-and-soc2-controls`
+- `backend-database-performance-and-efficiency`
+- `backend-transactions-concurrency-and-idempotency`
+- `repository-grounded-change-completion`
+
+Every API class must explicitly declare permissions because the current settings do not define a global default permission class.
+
+Every user-owned query must start from `request.user` or an owner-derived relation. Every response must use an explicit serializer contract. Multi-record mutations require an explicit transaction decision, and collection/query changes require a concrete bounded-query decision.

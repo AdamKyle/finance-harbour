@@ -2,9 +2,9 @@ import React from 'react';
 
 import StepProps from 'ui/form-wizard/types/step-props';
 
-const Step = ({ step_title, children }: StepProps) => {
+const Step = ({ step_title, show_title = true, children }: StepProps) => {
   const renderHeader = () => {
-    if (!step_title) {
+    if (!step_title || !show_title) {
       return null;
     }
 

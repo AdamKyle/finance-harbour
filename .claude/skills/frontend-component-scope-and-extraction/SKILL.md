@@ -109,7 +109,7 @@ For simple forms, build fields inline.
 
 Do not hide fields behind arrays like EXPENSE_FIELDS unless there is a strong reason and the pattern is approved.
 
-If the component is getting too large, extract a real child component instead of creating a config array above the component.
+If the component is getting too large, first reuse an existing component or use a local render helper. Create a child component only when the task requires a distinct feature responsibility and no existing component represents it.
 
 ## Rule summary
 
@@ -121,3 +121,16 @@ Everything else must either:
 - be extracted to a proper dedicated file that follows the frontend structure rules.
 
 Do not place interfaces, constants, functions, option lists, or field lists outside the component.
+
+
+## Extraction evidence rule
+
+Do not extract simply because code could be moved.
+
+Extraction is justified only by one of these repository-supported conditions:
+
+- an existing component or hook already owns the responsibility
+- more than one real consumer needs the same behavior
+- the extracted unit has a distinct feature responsibility explicitly required by the task
+
+Do not create a generic shared component, hook, or utility for one speculative use. Use `frontend-component-reuse-and-composition` before extraction.

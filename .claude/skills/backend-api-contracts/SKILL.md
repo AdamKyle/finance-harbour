@@ -154,3 +154,26 @@ Rules:
 
 - Do not weaken security defaults without an explicit task.
 - Add settings tests for security-sensitive changes.
+
+
+## Explicit permission and ownership contract
+
+The current `REST_FRAMEWORK` settings do not set `DEFAULT_PERMISSION_CLASSES`.
+
+Therefore:
+
+- every new API view/viewset must declare `permission_classes`
+- user and financial endpoints use `IsAuthenticated`
+- `AllowAny` must be explicit and limited to deliberately public endpoints
+- user-owned objects must be loaded through `request.user` or a relation derived from it
+- request-supplied user IDs must not establish ownership
+- cross-user isolation and anonymous rejection must be tested
+- `OwnershipMiddleware` is not a replacement for endpoint-level ownership because it only acts when `user_id` is present in route kwargs
+
+## Financial response contract
+
+Income, debt, expense, required-expense, payment-plan, and onboarding payloads are sensitive application data.
+
+Use explicit allow-listed structure serializers, do not echo arbitrary request fields, and do not log full payloads.
+
+Use `backend-security-and-soc2-controls` for every affected endpoint.

@@ -8,6 +8,7 @@ import ApiErrorAlert from 'lib/api-handler/components/api-error-alert';
 import Card from 'ui/cards/card';
 import FormWizardNav from 'ui/form-wizard/form-wizard-nav';
 import FormWizardProps from 'ui/form-wizard/types/form-wizard-props';
+import StepProps from 'ui/form-wizard/types/step-props';
 
 const FormWizard = ({
   total_steps,
@@ -16,8 +17,10 @@ const FormWizard = ({
   is_loading,
   render_loading_icon,
   on_request_next,
+  on_request_step_change,
   children,
   form_error,
+  available_step_indexes,
 }: FormWizardProps) => {
   const [current_index, set_current_index] = useState(initial_index);
   const step_refs = useRef<Array<HTMLDivElement | null>>([]);
@@ -32,16 +35,44 @@ const FormWizard = ({
     [step_elements, total_steps]
   );
 
+  const dot_labels = useMemo(
+    () =>
+      step_elements.map((element) => {
+        const props = element.props as StepProps;
+        return props.step_title ?? '';
+      }),
+    [step_elements]
+  );
+
   const { scrollToTop } = useScrollToTop();
 
-  const handlePreviousClick = () => {
+  const handlePreviousAsync = async () => {
     if (current_index === 0) {
       return;
+    }
+
+    if (is_loading) {
+      return;
+    }
+
+    if (on_request_step_change) {
+      const allowed = await on_request_step_change(
+        current_index,
+        current_index - 1
+      );
+
+      if (!allowed) {
+        return;
+      }
     }
 
     set_current_index((value) => value - 1);
 
     scrollToTop();
+  };
+
+  const handlePreviousClick = () => {
+    handlePreviousAsync().catch(() => {});
   };
 
   const handleNextClick = async () => {
@@ -70,14 +101,34 @@ const FormWizard = ({
     handleNextClick().catch(() => {});
   };
 
-  const handleDotClick = (target_index: number) => {
-    if (target_index >= current_index) {
+  const handleDotClickAsync = async (target_index: number) => {
+    if (is_loading) {
       return;
+    }
+
+    if (target_index === current_index) {
+      return;
+    }
+
+    if (!available_step_indexes.includes(target_index)) {
+      return;
+    }
+
+    if (on_request_step_change) {
+      const allowed = await on_request_step_change(current_index, target_index);
+
+      if (!allowed) {
+        return;
+      }
     }
 
     set_current_index(target_index);
 
     scrollToTop();
+  };
+
+  const handleDotClick = (target_index: number) => {
+    handleDotClickAsync(target_index).catch(() => {});
   };
 
   const getStepXPosition = (is_active: boolean, index: number): number => {
@@ -132,7 +183,7 @@ const FormWizard = ({
 
   const renderTrack = () => {
     return (
-      <div className="relative">
+      <div className="relative overflow-hidden">
         {step_elements.map((element, index) => {
           const is_active = index === current_index;
 
@@ -151,6 +202,7 @@ const FormWizard = ({
               className={getStepClassName(is_active)}
               style={{ pointerEvents: getStepPointerEvents(is_active) }}
               aria-hidden={!is_active}
+              inert={!is_active}
             >
               {element}
             </motion.div>
@@ -182,6 +234,8 @@ const FormWizard = ({
           on_next_click={handleNextButtonClick}
           on_dot_click={handleDotClick}
           render_loading_icon={render_loading_icon}
+          available_step_indexes={available_step_indexes}
+          dot_labels={dot_labels}
         />
       </>
     );

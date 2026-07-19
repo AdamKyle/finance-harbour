@@ -1,10 +1,11 @@
 import clsx from 'clsx';
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 
 import Button from 'ui/buttons/button';
 import { ButtonVariant } from 'ui/buttons/enums/button-variant';
 import IconButton from 'ui/buttons/icon-button';
 import FormWizardNavProps from 'ui/form-wizard/types/form-wizard-nav-props';
+import ToolTip from 'ui/tool-tip/tool-tip';
 
 const FormWizardNav = ({
   current_index,
@@ -16,11 +17,17 @@ const FormWizardNav = ({
   on_next_click,
   on_dot_click,
   render_loading_icon,
+  available_step_indexes,
+  dot_labels,
 }: FormWizardNavProps) => {
+  const base_id = useId();
+
   const dots = useMemo(
     () => Array.from({ length: total_steps }, (_, i) => i),
     [total_steps]
   );
+
+  const getTooltipId = (index: number) => `${base_id}-tooltip-${index}`;
 
   const getIconNode = () => {
     if (!is_loading || !render_loading_icon) {
@@ -46,23 +53,29 @@ const FormWizardNav = ({
     return ButtonVariant.SUCCESS;
   };
 
-  const getDotAriaCurrent = (is_active: boolean): 'true' | undefined => {
-    if (is_active) {
-      return 'true';
-    }
-
-    return undefined;
-  };
-
-  const getDotClassName = (is_active: boolean): string => {
-    const base =
-      'h-3 w-3 rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-danube-500';
+  const getDotVisualClassName = (
+    is_active: boolean,
+    is_available: boolean
+  ): string => {
+    const base = 'h-3 w-3 rounded-full transition-colors duration-300';
 
     if (is_active) {
-      return clsx(base, 'bg-gray-500 dark:bg-gray-400');
+      return clsx(
+        base,
+        'bg-storm-dust-600 dark:bg-storm-dust-300',
+        'ring-2 ring-storm-dust-600 ring-offset-1 ring-offset-white dark:ring-storm-dust-300 dark:ring-offset-storm-dust-800'
+      );
     }
 
-    return clsx(base, 'bg-gray-300 dark:bg-gray-600');
+    if (is_available) {
+      return clsx(
+        base,
+        'bg-storm-dust-400 dark:bg-storm-dust-500',
+        'group-hover/dot:bg-storm-dust-500 dark:group-hover/dot:bg-storm-dust-400'
+      );
+    }
+
+    return clsx(base, 'bg-storm-dust-200 dark:bg-storm-dust-700 opacity-50');
   };
 
   const renderPrevious = () => {
@@ -95,40 +108,63 @@ const FormWizardNav = ({
     }
 
     return (
-      <div
-        className="flex items-center justify-center gap-2"
-        role="tablist"
-        aria-label="Wizard steps"
-      >
+      <ol className="flex items-center gap-1">
         {dots.map((index_value) => {
           const is_active = index_value === current_index;
-          const is_disabled = !is_active && index_value >= current_index;
+          const is_available = available_step_indexes.includes(index_value);
+          const is_disabled = !is_available || is_loading === true;
+          const label = dot_labels[index_value] ?? '';
+          const tooltip_id = getTooltipId(index_value);
 
           const handleDotClick = () => {
             on_dot_click(index_value);
           };
 
           return (
-            <button
-              key={`dot-${index_value}`}
-              type="button"
-              aria-current={getDotAriaCurrent(is_active)}
-              aria-disabled={is_disabled}
-              disabled={is_disabled}
-              onClick={handleDotClick}
-              className={getDotClassName(is_active)}
-            />
+            <li key={`dot-${index_value}`}>
+              <ToolTip id={tooltip_id} label={label}>
+                <button
+                  type="button"
+                  aria-label={`${label}, step ${index_value + 1} of ${total_steps}`}
+                  aria-describedby={tooltip_id}
+                  aria-current={is_active ? 'step' : undefined}
+                  disabled={is_disabled}
+                  onClick={handleDotClick}
+                  className={clsx(
+                    'group/dot flex min-h-8 min-w-8 items-center justify-center rounded-full',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    'focus-visible:ring-blue-bell-500',
+                    is_disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+                  )}
+                >
+                  <span
+                    className={getDotVisualClassName(is_active, is_available)}
+                  />
+                </button>
+              </ToolTip>
+            </li>
           );
         })}
-      </div>
+      </ol>
     );
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-      <div className="shrink-0">{renderPrevious()}</div>
-      <div className="flex-1">{renderDots()}</div>
-      <div className="shrink-0">{renderNext()}</div>
+    <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+      <div className="grid grid-cols-2 gap-y-3 sm:flex sm:items-center">
+        <nav
+          aria-label="Wizard steps"
+          className="col-span-2 flex justify-center sm:order-2 sm:flex-1"
+        >
+          {renderDots()}
+        </nav>
+        <div className="col-start-1 row-start-2 flex justify-start sm:order-1 sm:shrink-0">
+          {renderPrevious()}
+        </div>
+        <div className="col-start-2 row-start-2 flex justify-end sm:order-3 sm:shrink-0">
+          {renderNext()}
+        </div>
+      </div>
     </div>
   );
 };

@@ -11,13 +11,13 @@ Use this skill before any Finance Harbour task that edits code, runs commands, c
 
 Finance Harbour is a Docker-based Django and React application.
 
-Read `README.md` before choosing commands.
+Read `README.md`, `package.json`, `.githooks/**`, `.pre-commit-config.yaml`, and the relevant skill before choosing commands.
 
-Use commands from the README.
+Use commands that actually exist in those files.
 
 Do not invent commands.
 
-Do not run host-machine validation commands when the README provides Docker commands.
+Do not run host-machine validation commands when the repository provides Docker equivalents.
 
 If another skill has a stricter rule, follow the stricter rule.
 
@@ -98,7 +98,7 @@ Claude and Codex may create Django migration files when backend model changes re
 
 Claude and Codex may run this Docker migration creation command when model changes require it:
 
-- `docker compose exec backend python manage.py makemigrations <app_name>`
+- `docker compose exec -T backend python manage.py makemigrations <app_name>`
 
 Use the owning app name.
 
@@ -124,12 +124,12 @@ Forbidden migration/database commands include:
 - `python manage.py sqlmigrate`
 - `python manage.py dbshell`
 - `python manage.py flush`
-- `docker compose exec backend python manage.py migrate`
-- `docker compose exec backend python manage.py migrate <app_name>`
-- `docker compose exec backend python manage.py migrate <app_name> zero`
-- `docker compose exec backend python manage.py sqlmigrate`
-- `docker compose exec backend python manage.py dbshell`
-- `docker compose exec backend python manage.py flush`
+- `docker compose exec -T backend python manage.py migrate`
+- `docker compose exec -T backend python manage.py migrate <app_name>`
+- `docker compose exec -T backend python manage.py migrate <app_name> zero`
+- `docker compose exec -T backend python manage.py sqlmigrate`
+- `docker compose exec -T backend python manage.py dbshell`
+- `docker compose exec -T backend python manage.py flush`
 - any command that applies, rolls back, flushes, resets, or directly edits database schema/data outside a migration file
 
 If migrations need to be applied or rolled back, stop and state that a human must run the migration command.
@@ -158,9 +158,12 @@ Do not put API hooks directly inside visual components.
 
 Run frontend validation through Docker from the project root.
 
-Allowed frontend command from the README:
+Current Docker-compatible frontend validation commands from the Git hooks and package scripts:
 
-- `docker compose exec frontend yarn cleanup`
+- `docker compose run --rm --no-deps frontend yarn cleanup`
+- `docker compose run --rm --no-deps frontend yarn check`
+- `docker compose exec -T frontend yarn cleanup` when using the running container
+- `docker compose exec -T frontend yarn check` when using the running container
 
 Allowed frontend dependency commands from the README only when the user explicitly requests dependency changes:
 
@@ -178,27 +181,29 @@ Do not run host-machine frontend validation commands when Docker commands are av
 
 Run backend validation through Docker from the project root.
 
-Allowed backend check command from the README:
+Current backend check commands from the Git hooks and package configuration:
 
-- `docker compose exec backend python manage.py check && docker compose exec backend ruff check . && docker compose exec backend ruff format --check .`
+- `docker compose exec -T backend python manage.py check`
+- `docker compose exec -T backend ruff check .`
+- `docker compose exec -T backend ruff format --check .`
 
-Allowed backend format command from the README:
+Current backend format command from the Git hooks:
 
-- `docker compose exec backend ruff format .`
+- `docker compose exec -T backend ruff format .`
 
-Allowed backend test commands from the README:
+Current backend test commands supported by the Django project and Docker workflow:
 
-- `docker compose exec backend python manage.py test`
-- `docker compose exec backend python manage.py test <app_name>`
+- `docker compose exec -T backend python manage.py test`
+- `docker compose exec -T backend python manage.py test <app_name>`
 
-Allowed backend coverage commands from the README:
+Current backend coverage commands from the pre-push workflow:
 
-- `docker compose exec backend coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test`
-- `docker compose exec backend coverage report -m`
+- `docker compose exec -T backend coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test`
+- `docker compose exec -T backend coverage report -m`
 
-Allowed backend migration creation command from the README, only when migration creation is allowed:
+Current backend migration creation command, only when migration creation is allowed:
 
-- `docker compose exec backend python manage.py makemigrations <app_name>`
+- `docker compose exec -T backend python manage.py makemigrations <app_name>`
 
 Use the narrowest backend test command that validates the changed behavior when the prompt asks for targeted tests.
 
@@ -246,3 +251,16 @@ Before finishing a code task, verify:
 - migrations were not applied or rolled back
 - `.agents/skills/` and `.claude/skills/` remain identical when skills were changed
 - no definition files were added beside skills
+
+
+## Mandatory repository discovery
+
+Before creating files or abstractions:
+
+- inspect the target and sibling files
+- search existing call sites and analogous implementations
+- for frontend work, use `frontend-component-reuse-and-composition`
+- for backend work, inspect permissions, owner scoping, request validators, response serializers, constraints, query access, and transaction boundaries
+- use `repository-grounded-change-completion` before reporting completion
+
+Do not add a component, hook, service, Django app, dependency, or command based only on a general best practice. It must fit the actual repository and task.

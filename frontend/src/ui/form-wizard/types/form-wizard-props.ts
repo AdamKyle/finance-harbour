@@ -9,6 +9,11 @@ export default interface FormWizardProps {
   is_loading?: boolean;
   render_loading_icon?: () => ReactNode;
   on_request_next?: (current_index: number) => Promise<boolean> | boolean;
+  on_request_step_change?: (
+    current_index: number,
+    target_index: number
+  ) => Promise<boolean> | boolean;
   children: ReactNode;
   form_error: AxiosErrorDefinition | null;
+  available_step_indexes: number[];
 }

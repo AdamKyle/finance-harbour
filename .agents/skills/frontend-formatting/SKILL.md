@@ -156,3 +156,13 @@ Rules:
 
 - Keep package scripts compatible with these hooks.
 - Do not change scripts without updating hooks if needed.
+
+
+## Validation scope truthfulness
+
+The current frontend has no automated behavior-test command.
+
+- `yarn check` validates formatting, linting, types, the configured unused-file command, and the production build.
+- Do not call `yarn check` a test suite.
+- `unused-files-check` currently uses `unimported || true`, so report it as non-blocking rather than claiming unused-file validation passed strictly.
+- Use `frontend-behavioral-validation` for precise manual verification evidence after behavior changes.

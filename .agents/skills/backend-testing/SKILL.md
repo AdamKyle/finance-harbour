@@ -31,12 +31,11 @@ The codebase currently uses:
 
 Use the project command rules before running backend test commands.
 
-Default backend test validation, when the user has not provided a narrower command, is:
+Default backend test validation, when the user has not provided a narrower command, is run through Docker from the project root:
 
 ```bash
-cd backend
-coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test
-coverage report -m
+docker compose exec -T backend coverage run --source=. --omit="*/migrations/*,*/tests/*,manage.py,config/*" manage.py test
+docker compose exec -T backend coverage report -m
 ```
 
 If the prompt gives an exact backend test class, exact filter, or exact command, run only that narrower command.
@@ -191,3 +190,21 @@ Do not place multiple test classes in one test file.
 
 Split existing mixed test files when touched by the task.
 
+
+
+## Security, transaction, and query test requirements
+
+When applicable, tests must also prove:
+
+- every new API class rejects anonymous access unless deliberately public
+- one authenticated user cannot read or mutate another user's data
+- exact response fields do not expose unrelated model data
+- multi-record failures roll back the full logical operation
+- repeated state-setting requests do not create duplicates
+- database constraints remain the final uniqueness boundary
+- pagination remains bounded and metadata is correct
+- a query-count assertion is used only when a concrete query budget is part of the change
+
+Do not use broad test-level try/catch. Use `assertRaises` and `transaction.atomic()` for expected database integrity failures, matching the current model tests.
+
+Mocks remain prohibited for app-owned behavior. The current repository uses a narrow patch only at the external Google provider boundary; do not generalize that exception to managers, models, permissions, validators, serializers, or views.

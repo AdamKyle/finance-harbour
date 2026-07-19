@@ -125,6 +125,22 @@ const Onboarding = () => {
 
     return progressStepIndex >= 0 ? progressStepIndex : 0;
   }, [progress]);
+  const available_step_indexes = useMemo(() => {
+    if (!progress) {
+      return [0];
+    }
+
+    return ONBOARDING_STEP_ORDER.reduce<number[]>((acc, step_id, index) => {
+      if (
+        progress.completed_steps.includes(step_id) ||
+        step_id === progress.current_step
+      ) {
+        acc.push(index);
+      }
+
+      return acc;
+    }, []);
+  }, [progress]);
   const saveApiError = saveError ? { message: saveError } : null;
 
   useEffect(() => {
@@ -198,10 +214,8 @@ const Onboarding = () => {
     }));
   };
 
-  const handleRequestNext = async (stepIndex: number): Promise<boolean> => {
+  const saveCurrentStep = async (stepIndex: number): Promise<boolean> => {
     const currentStep = ONBOARDING_STEP_ORDER[stepIndex];
-    const nextStep =
-      ONBOARDING_STEP_ORDER[stepIndex + 1] ?? ONBOARDING_STEP_ORDER[stepIndex];
 
     setSaveError('');
 
@@ -321,8 +335,24 @@ const Onboarding = () => {
 
         return false;
       }
-    } else if (currentStep === OnboardingStepId.CONCLUDE) {
+    }
+
+    return true;
+  };
+
+  const handleRequestNext = async (stepIndex: number): Promise<boolean> => {
+    const currentStep = ONBOARDING_STEP_ORDER[stepIndex];
+
+    if (currentStep === OnboardingStepId.CONCLUDE) {
+      setSaveError('');
+
       return complete();
+    }
+
+    const saved = await saveCurrentStep(stepIndex);
+
+    if (!saved) {
+      return false;
     }
 
     const completedSteps = [...(progress?.completed_steps ?? [])];
@@ -331,9 +361,56 @@ const Onboarding = () => {
       completedSteps.push(currentStep);
     }
 
+    const candidateNextStep =
+      ONBOARDING_STEP_ORDER[stepIndex + 1] ?? ONBOARDING_STEP_ORDER[stepIndex];
+    const existingCurrentStepIndex = progress
+      ? ONBOARDING_STEP_ORDER.indexOf(progress.current_step)
+      : -1;
+    const candidateNextStepIndex =
+      ONBOARDING_STEP_ORDER.indexOf(candidateNextStep);
+    const nextStep =
+      candidateNextStepIndex > existingCurrentStepIndex
+        ? candidateNextStep
+        : (progress?.current_step ?? candidateNextStep);
+
     const progressResult = await saveProgress({
       current_step: nextStep,
       completed_steps: completedSteps,
+      form_data: buildOnboardingProgressFormData(requestData),
+    });
+
+    if (!progressResult.ok) {
+      setSaveError(
+        progressResult.error ??
+          'We could not save your onboarding progress. Please try again.'
+      );
+
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRequestStepChange = async (
+    currentIndex: number,
+    _targetIndex: number
+  ): Promise<boolean> => {
+    const currentStep = ONBOARDING_STEP_ORDER[currentIndex];
+
+    if (currentStep !== OnboardingStepId.CONCLUDE) {
+      const saved = await saveCurrentStep(currentIndex);
+
+      if (!saved) {
+        return false;
+      }
+    } else {
+      setSaveError('');
+    }
+
+    const progressResult = await saveProgress({
+      current_step:
+        progress?.current_step ?? ONBOARDING_STEP_ORDER[currentIndex],
+      completed_steps: progress?.completed_steps ?? [],
       form_data: buildOnboardingProgressFormData(requestData),
     });
 
@@ -372,7 +449,9 @@ const Onboarding = () => {
         name="Get started"
         is_loading={isLoading}
         on_request_next={handleRequestNext}
+        on_request_step_change={handleRequestStepChange}
         form_error={completeError ?? saveApiError}
+        available_step_indexes={available_step_indexes}
       >
         <Step step_title="Let's setup your profile!">
           <ProfileStep
@@ -422,7 +501,7 @@ const Onboarding = () => {
             error={warningFieldErrors.left_over_warning_amount_dollars}
           />
         </Step>
-        <Step step_title="All done">
+        <Step step_title="Finish" show_title={false}>
           <ConcludeStep />
         </Step>
       </FormWizard>

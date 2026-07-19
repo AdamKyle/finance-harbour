@@ -1,6 +1,11 @@
 import clsx from 'clsx';
 import React, { ChangeEvent } from 'react';
 
+import profileImage2 from 'assets/profile-images/profile-image-2.png';
+import profileImage3 from 'assets/profile-images/profile-image-3.png';
+import profileImage4 from 'assets/profile-images/profile-image-4.png';
+import profileImageOne from 'assets/profile-images/profile-image-one.png';
+
 import ProfileStepProps from 'components/pages/onboarding/types/profile-step-props';
 
 import Input from 'ui/form-elements/input';
@@ -8,24 +13,24 @@ import Input from 'ui/form-elements/input';
 const ProfileStep = ({ request, setRequest, error }: ProfileStepProps) => {
   const defaultPhoto = {
     id: 'avatar-d',
-    label: 'Dog outdoors',
-    src: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=512&q=80',
+    label: 'Animated young man at Finance Harbour',
+    src: profileImage4,
   };
   const profilePhotos = [
     {
       id: 'avatar-a',
-      label: 'Curious tabby cat',
-      src: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=512&q=80',
+      label: 'Animated woman with long dark hair at Finance Harbour',
+      src: profileImageOne,
     },
     {
       id: 'avatar-b',
-      label: 'Orange cat',
-      src: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=512&q=80',
+      label: 'Animated man with dark hair at Finance Harbour',
+      src: profileImage2,
     },
     {
       id: 'avatar-c',
-      label: 'Golden retriever',
-      src: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=512&q=80',
+      label: 'Animated woman with curly hair at Finance Harbour',
+      src: profileImage3,
     },
     defaultPhoto,
   ];

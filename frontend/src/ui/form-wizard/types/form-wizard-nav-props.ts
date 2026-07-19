@@ -10,4 +10,6 @@ export default interface FormWizardNavProps {
   on_next_click: () => void;
   on_dot_click: (index_value: number) => void;
   render_loading_icon?: () => ReactNode;
+  available_step_indexes: number[];
+  dot_labels: string[];
 }
