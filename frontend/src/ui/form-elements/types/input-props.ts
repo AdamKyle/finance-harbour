@@ -1,10 +1,10 @@
-import { ChangeEventHandler } from 'react';
+import { ChangeEventHandler, FocusEventHandler } from 'react';
 
 export default interface InputProps {
   id: string;
   label: string;
   name: string;
-  type: 'email' | 'password' | 'text';
+  type: 'date' | 'email' | 'password' | 'text';
   additional_css?: string;
   autoComplete?: string;
   disabled?: boolean;
@@ -13,6 +13,7 @@ export default interface InputProps {
   help_text?: string;
   inputMode?: 'decimal' | 'email' | 'numeric' | 'text';
   onChange?: ChangeEventHandler<HTMLInputElement>;
+  onBlur?: FocusEventHandler<HTMLInputElement>;
   placeholder?: string;
   required?: boolean;
   value?: string;

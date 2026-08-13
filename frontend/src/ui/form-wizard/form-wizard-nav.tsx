@@ -84,7 +84,7 @@ const FormWizardNav = ({
         on_click={on_previous_click}
         label="Previous"
         variant={ButtonVariant.PRIMARY}
-        disabled={!can_go_previous}
+        disabled={!can_go_previous || is_loading === true}
       />
     );
   };
@@ -116,6 +116,30 @@ const FormWizardNav = ({
           const label = dot_labels[index_value] ?? '';
           const tooltip_id = getTooltipId(index_value);
 
+          const getAriaCurrent = (): 'step' | undefined => {
+            if (!is_active) {
+              return undefined;
+            }
+
+            return 'step';
+          };
+
+          const getDotButtonClassName = () => {
+            if (is_disabled) {
+              return clsx(
+                'group/dot flex min-h-8 min-w-8 cursor-not-allowed items-center justify-center rounded-full',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                'focus-visible:ring-blue-bell-500'
+              );
+            }
+
+            return clsx(
+              'group/dot flex min-h-8 min-w-8 cursor-pointer items-center justify-center rounded-full',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              'focus-visible:ring-blue-bell-500'
+            );
+          };
+
           const handleDotClick = () => {
             on_dot_click(index_value);
           };
@@ -127,15 +151,10 @@ const FormWizardNav = ({
                   type="button"
                   aria-label={`${label}, step ${index_value + 1} of ${total_steps}`}
                   aria-describedby={tooltip_id}
-                  aria-current={is_active ? 'step' : undefined}
+                  aria-current={getAriaCurrent()}
                   disabled={is_disabled}
                   onClick={handleDotClick}
-                  className={clsx(
-                    'group/dot flex min-h-8 min-w-8 items-center justify-center rounded-full',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                    'focus-visible:ring-blue-bell-500',
-                    is_disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-                  )}
+                  className={getDotButtonClassName()}
                 >
                   <span
                     className={getDotVisualClassName(is_active, is_available)}

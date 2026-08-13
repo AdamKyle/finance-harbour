@@ -1,3 +1,6 @@
+import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
+import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import { DebtEntryFormState } from 'components/pages/onboarding/types/debt-entry-form-state';
 import { DebtStepFormState } from 'components/pages/onboarding/types/debt-step-form-state';
 import { ExpenseStepFormState } from 'components/pages/onboarding/types/expense-step-form-state';
@@ -7,7 +10,72 @@ import { LeftOverWarningStepFormState } from 'components/pages/onboarding/types/
 import { MiscExpenseEntryFormState } from 'components/pages/onboarding/types/misc-expense-entry-form-state';
 import { OnboardingFormData } from 'components/pages/onboarding/types/onboarding-form-data';
 import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
+import { PaymentScheduleFormState } from 'components/pages/onboarding/types/payment-schedule-form-state';
 import { ProfileStepFormState } from 'components/pages/onboarding/types/profile-step-form-state';
+
+const createPaycheckSchedule = (): PaymentScheduleFormState => ({
+  timing: ExpensePaymentTiming.PAYCHECK_POSITION,
+  paycheck_position: PaycheckPosition.FIRST,
+  day_of_month: '',
+  auto_deducted: false,
+});
+
+const createEveryPaycheckSchedule = (): PaymentScheduleFormState => ({
+  timing: ExpensePaymentTiming.EVERY_PAYCHECK,
+  paycheck_position: PaycheckPosition.FIRST,
+  day_of_month: '',
+  auto_deducted: false,
+});
+
+const createLastPaycheckSchedule = (): PaymentScheduleFormState => ({
+  timing: ExpensePaymentTiming.PAYCHECK_POSITION,
+  paycheck_position: PaycheckPosition.LAST,
+  day_of_month: '',
+  auto_deducted: false,
+});
+
+const hydratePaymentSchedule = (
+  submittedValue: unknown
+): PaymentScheduleFormState => {
+  if (!isRecord(submittedValue)) {
+    return createPaycheckSchedule();
+  }
+
+  let timing = ExpensePaymentTiming.PAYCHECK_POSITION;
+
+  if (submittedValue.timing === ExpensePaymentTiming.DAY_OF_MONTH) {
+    timing = ExpensePaymentTiming.DAY_OF_MONTH;
+  } else if (submittedValue.timing === ExpensePaymentTiming.EVERY_PAYCHECK) {
+    timing = ExpensePaymentTiming.EVERY_PAYCHECK;
+  }
+
+  return {
+    timing,
+    paycheck_position: getPaycheckPosition(submittedValue.paycheck_position),
+    day_of_month: getStringValue(submittedValue, 'day_of_month'),
+    auto_deducted: getNullableBooleanValue(submittedValue, 'auto_deducted'),
+  };
+};
+
+const getPaycheckPosition = (submittedValue: unknown): PaycheckPosition => {
+  if (submittedValue === PaycheckPosition.SECOND) {
+    return PaycheckPosition.SECOND;
+  }
+
+  if (submittedValue === PaycheckPosition.THIRD) {
+    return PaycheckPosition.THIRD;
+  }
+
+  if (submittedValue === PaycheckPosition.FOURTH) {
+    return PaycheckPosition.FOURTH;
+  }
+
+  if (submittedValue === PaycheckPosition.LAST) {
+    return PaycheckPosition.LAST;
+  }
+
+  return PaycheckPosition.FIRST;
+};
 
 const isRecord = (
   submittedValue: unknown
@@ -46,6 +114,48 @@ const getPayPeriodType = (submittedValue: unknown): PayPeriodType | '' => {
   }
 
   return '';
+};
+
+const getUtilityType = (submittedValue: unknown): UtilityType | '' => {
+  if (submittedValue === UtilityType.ELECTRICITY) {
+    return UtilityType.ELECTRICITY;
+  }
+
+  if (submittedValue === UtilityType.WATER) {
+    return UtilityType.WATER;
+  }
+
+  if (submittedValue === UtilityType.WATER_AND_ELECTRICITY) {
+    return UtilityType.WATER_AND_ELECTRICITY;
+  }
+
+  if (submittedValue === UtilityType.UTILITIES) {
+    return UtilityType.UTILITIES;
+  }
+
+  if (submittedValue === UtilityType.CUSTOM) {
+    return UtilityType.CUSTOM;
+  }
+
+  return '';
+};
+
+const getBooleanValue = (
+  submittedData: Record<string, unknown>,
+  fieldName: string
+): boolean => submittedData[fieldName] === true;
+
+const getNullableBooleanValue = (
+  submittedData: Record<string, unknown>,
+  fieldName: string
+): boolean | null => {
+  const submittedValue = submittedData[fieldName];
+
+  if (typeof submittedValue !== 'boolean') {
+    return null;
+  }
+
+  return submittedValue;
 };
 
 const getProfilePhoto = (
@@ -96,17 +206,30 @@ export const createInitialOnboardingFormRequest = (): OnboardingFormData => ({
   income: {
     income_per_pay_period_dollars: '',
     pay_period_type: '',
+    next_pay_date: '',
   },
   expenses: {
     rent_or_mortgage_dollars: '',
-    water_dollars: '',
-    electricity_dollars: '',
+    utility_type: '',
+    utility_custom_label: '',
+    utilities_dollars: '',
+    utilities_includes_internet: false,
+    utilities_includes_cable: false,
     food_dollars: '',
     internet_dollars: '',
     phone_dollars: '',
     car_payment_dollars: '',
     insurance_dollars: '',
     misc_expenses: [],
+    payment_schedules: {
+      rent_or_mortgage: createLastPaycheckSchedule(),
+      utilities: createPaycheckSchedule(),
+      food: createEveryPaycheckSchedule(),
+      internet: createPaycheckSchedule(),
+      phone: createPaycheckSchedule(),
+      car_payment: createPaycheckSchedule(),
+      insurance: createPaycheckSchedule(),
+    },
   },
   important_expenses: {
     selected_keys: [],
@@ -168,9 +291,9 @@ export const hydrateDebtFormRequest = (
       return {
         label: '',
         current_balance_dollars: '',
-        interest_rate_percent: '',
         minimum_payment_dollars: '',
         current_payment_dollars: '',
+        payment_schedule: createPaycheckSchedule(),
       };
     }
 
@@ -180,7 +303,6 @@ export const hydrateDebtFormRequest = (
         debtEntry,
         'current_balance_dollars'
       ),
-      interest_rate_percent: getStringValue(debtEntry, 'interest_rate_percent'),
       minimum_payment_dollars: getStringValue(
         debtEntry,
         'minimum_payment_dollars'
@@ -189,6 +311,7 @@ export const hydrateDebtFormRequest = (
         debtEntry,
         'current_payment_dollars'
       ),
+      payment_schedule: hydratePaymentSchedule(debtEntry.payment_schedule),
     };
   });
 
@@ -217,6 +340,7 @@ export const hydrateIncomeFormRequest = (
       'income_per_pay_period_dollars'
     ),
     pay_period_type: getPayPeriodType(submittedValue.pay_period_type),
+    next_pay_date: getStringValue(submittedValue, 'next_pay_date'),
   };
 };
 
@@ -246,29 +370,72 @@ export const hydrateExpenseFormRequest = (
   const miscExpenses: MiscExpenseEntryFormState[] = submittedMiscExpenses.map(
     (miscExpense) => {
       if (!isRecord(miscExpense)) {
-        return { label: '', amount_dollars: '' };
+        return {
+          label: '',
+          amount_dollars: '',
+          payment_schedule: createPaycheckSchedule(),
+        };
       }
 
       return {
         label: getStringValue(miscExpense, 'label'),
         amount_dollars: getStringValue(miscExpense, 'amount_dollars'),
+        payment_schedule: hydratePaymentSchedule(miscExpense.payment_schedule),
       };
     }
   );
+  let paymentScheduleValues: Record<string, unknown> | null = null;
+
+  if (isRecord(submittedValue.payment_schedules)) {
+    paymentScheduleValues = submittedValue.payment_schedules;
+  }
+
+  const getPaymentScheduleValue = (sourceKey: string) => {
+    if (paymentScheduleValues === null) {
+      return null;
+    }
+
+    return paymentScheduleValues[sourceKey];
+  };
 
   return {
     rent_or_mortgage_dollars: getStringValue(
       submittedValue,
       'rent_or_mortgage_dollars'
     ),
-    water_dollars: getStringValue(submittedValue, 'water_dollars'),
-    electricity_dollars: getStringValue(submittedValue, 'electricity_dollars'),
+    utility_type: getUtilityType(submittedValue.utility_type),
+    utility_custom_label: getStringValue(
+      submittedValue,
+      'utility_custom_label'
+    ),
+    utilities_dollars: getStringValue(submittedValue, 'utilities_dollars'),
+    utilities_includes_internet: getBooleanValue(
+      submittedValue,
+      'utilities_includes_internet'
+    ),
+    utilities_includes_cable: getBooleanValue(
+      submittedValue,
+      'utilities_includes_cable'
+    ),
     food_dollars: getStringValue(submittedValue, 'food_dollars'),
     internet_dollars: getStringValue(submittedValue, 'internet_dollars'),
     phone_dollars: getStringValue(submittedValue, 'phone_dollars'),
     car_payment_dollars: getStringValue(submittedValue, 'car_payment_dollars'),
     insurance_dollars: getStringValue(submittedValue, 'insurance_dollars'),
     misc_expenses: miscExpenses,
+    payment_schedules: {
+      rent_or_mortgage: hydratePaymentSchedule(
+        getPaymentScheduleValue('rent_or_mortgage')
+      ),
+      utilities: hydratePaymentSchedule(getPaymentScheduleValue('utilities')),
+      food: hydratePaymentSchedule(getPaymentScheduleValue('food')),
+      internet: hydratePaymentSchedule(getPaymentScheduleValue('internet')),
+      phone: hydratePaymentSchedule(getPaymentScheduleValue('phone')),
+      car_payment: hydratePaymentSchedule(
+        getPaymentScheduleValue('car_payment')
+      ),
+      insurance: hydratePaymentSchedule(getPaymentScheduleValue('insurance')),
+    },
   };
 };
 

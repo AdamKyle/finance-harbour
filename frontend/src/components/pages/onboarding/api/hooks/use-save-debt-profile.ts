@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 import { useCallback, useState } from 'react';
 
+import DebtProfileResponseDefinition from './definitions/debt-profile-response-definition';
 import { SaveDebtProfileRequestDefinition } from './definitions/save-debt-profile-request-definition';
 import { UseSaveDebtProfileDefinition } from './definitions/use-save-debt-profile-definition';
 
@@ -22,7 +23,7 @@ export const useSaveDebtProfile = (): UseSaveDebtProfileDefinition => {
 
       try {
         await apiHandler.patch<
-          object,
+          DebtProfileResponseDefinition,
           object,
           SaveDebtProfileRequestDefinition
         >(url, data);

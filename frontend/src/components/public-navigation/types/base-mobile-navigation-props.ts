@@ -5,6 +5,8 @@ export default interface BaseMobileNavigationProps {
   mobileMenuId: string;
   navigationItems: NavigationItemDefinition[];
   shouldReduceMotion: boolean | null;
+  isAuthenticated: boolean;
+  isAuthenticationLoading: boolean;
   onCloseMenu: () => void;
   onLogin: () => void;
   onRegister: () => void;

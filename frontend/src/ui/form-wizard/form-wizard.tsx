@@ -1,5 +1,11 @@
-import { motion } from 'framer-motion';
-import React, { useMemo, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import React, {
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { useScrollToTop } from '../../util/hooks/use-scroll-to-top';
 
@@ -13,6 +19,7 @@ import StepProps from 'ui/form-wizard/types/step-props';
 const FormWizard = ({
   total_steps,
   initial_index = 0,
+  requested_index,
   name,
   is_loading,
   render_loading_icon,
@@ -21,12 +28,19 @@ const FormWizard = ({
   children,
   form_error,
   available_step_indexes,
+  render_card = true,
 }: FormWizardProps) => {
   const [current_index, set_current_index] = useState(initial_index);
   const step_refs = useRef<Array<HTMLDivElement | null>>([]);
+  const wizard_ref = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const step_elements = useMemo(
-    () => React.Children.toArray(children).filter(React.isValidElement),
+    () =>
+      React.Children.toArray(children).filter(
+        (child): child is ReactElement<StepProps> =>
+          React.isValidElement<StepProps>(child)
+      ),
     [children]
   );
 
@@ -36,15 +50,23 @@ const FormWizard = ({
   );
 
   const dot_labels = useMemo(
-    () =>
-      step_elements.map((element) => {
-        const props = element.props as StepProps;
-        return props.step_title ?? '';
-      }),
+    () => step_elements.map((element) => element.props.step_title),
     [step_elements]
   );
 
-  const { scrollToTop } = useScrollToTop();
+  const { scrollToTop } = useScrollToTop({ targetRef: wizard_ref });
+
+  useEffect(() => {
+    step_refs.current[current_index]?.focus({ preventScroll: true });
+  }, [current_index]);
+
+  useEffect(() => {
+    if (requested_index === undefined) {
+      return;
+    }
+
+    set_current_index(requested_index);
+  }, [requested_index]);
 
   const handlePreviousAsync = async () => {
     if (current_index === 0) {
@@ -167,6 +189,22 @@ const FormWizard = ({
     return 'none';
   };
 
+  const getStepTransition = () => {
+    if (shouldReduceMotion === true) {
+      return { duration: 0 };
+    }
+
+    return { duration: 0.25 };
+  };
+
+  const getStepTabIndex = (is_active: boolean) => {
+    if (!is_active) {
+      return undefined;
+    }
+
+    return -1;
+  };
+
   const renderHeader = () => {
     if (!name) {
       return null;
@@ -198,11 +236,14 @@ const FormWizard = ({
                 x: getStepXPosition(is_active, index),
                 opacity: getStepOpacity(is_active),
               }}
-              transition={{ duration: 0.25 }}
+              transition={getStepTransition()}
               className={getStepClassName(is_active)}
               style={{ pointerEvents: getStepPointerEvents(is_active) }}
               aria-hidden={!is_active}
+              aria-label={`${dot_labels[index]}, step ${index + 1} of ${computed_total_steps}`}
               inert={!is_active}
+              role="group"
+              tabIndex={getStepTabIndex(is_active)}
             >
               {element}
             </motion.div>
@@ -241,17 +282,27 @@ const FormWizard = ({
     );
   };
 
-  return (
-    <div className="mx-auto my-4 w-full px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-5xl">
-        <Card>
-          <div className="space-y-4">
-            {renderHeader()}
-            {renderTrack()}
-            {renderFooter()}
-          </div>
-        </Card>
+  const renderContent = () => {
+    return (
+      <div className="space-y-4">
+        {renderHeader()}
+        {renderTrack()}
+        {renderFooter()}
       </div>
+    );
+  };
+
+  const renderCard = () => {
+    if (!render_card) {
+      return renderContent();
+    }
+
+    return <Card>{renderContent()}</Card>;
+  };
+
+  return (
+    <div ref={wizard_ref} className="mx-auto my-4 w-full px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl">{renderCard()}</div>
     </div>
   );
 };

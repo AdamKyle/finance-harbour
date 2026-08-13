@@ -78,3 +78,18 @@ class ProfileOnboardingPartialUpdateRequestTest(TestCase):
         profile_request.validate()
 
         self.assertEqual(profile_request.validated_data, {"nickname": "SameNick"})
+
+    def test_whitespace_only_nickname_fails_validation(self) -> None:
+        user = User.objects.create_user(
+            email="whitespace-profile-request@example.com",
+            password="StrongPassword123!",
+        )
+        profile_request = ProfileOnboardingPartialUpdateRequest(
+            {"nickname": "   "},
+            instance=user,
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            profile_request.validate()
+
+        self.assertIn("nickname", raised_error.exception.detail)

@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 import { useCallback, useState } from 'react';
 
+import MonthlyExpenseResponseDefinition from './definitions/monthly-expense-response-definition';
 import { SaveMonthlyExpenseRequestDefinition } from './definitions/save-monthly-expense-request-definition';
 import { UseSaveMonthlyExpenseDefinition } from './definitions/use-save-monthly-expense-definition';
 
@@ -22,7 +23,7 @@ export const useSaveMonthlyExpense = (): UseSaveMonthlyExpenseDefinition => {
 
       try {
         await apiHandler.patch<
-          object,
+          MonthlyExpenseResponseDefinition,
           object,
           SaveMonthlyExpenseRequestDefinition
         >(url, data);

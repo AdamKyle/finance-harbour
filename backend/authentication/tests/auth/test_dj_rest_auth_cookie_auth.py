@@ -76,6 +76,60 @@ class DjRestAuthCookieAuthTest(APITestCase):
         self.assertEqual(user_response.data["email"], "logged-in@example.com")
         self.assertTrue(user_response.data["completed_onboarding"])
 
+    def test_login_rotates_csrf_token_and_requires_fresh_token_for_profile_update(self) -> None:
+        user = User.objects.create_user(
+            email="csrf-rotation@example.com",
+            password="StrongPassword123!",
+        )
+
+        client = APIClient(enforce_csrf_checks=True)
+        stale_csrf_token = self._get_csrf_token(client)
+
+        login_response = client.post(
+            "/api/auth/login/",
+            {
+                "email": "csrf-rotation@example.com",
+                "password": "StrongPassword123!",
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=stale_csrf_token,
+            HTTP_ORIGIN=self.secure_origin,
+            secure=True,
+        )
+
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+
+        fresh_csrf_token = self._get_csrf_token(client)
+
+        self.assertNotEqual(stale_csrf_token, fresh_csrf_token)
+
+        stale_update_response = client.patch(
+            "/api/profile/onboarding/",
+            {"nickname": "FreshNick"},
+            format="json",
+            HTTP_X_CSRFTOKEN=stale_csrf_token,
+            HTTP_ORIGIN=self.secure_origin,
+            secure=True,
+        )
+
+        self.assertEqual(stale_update_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        fresh_update_response = client.patch(
+            "/api/profile/onboarding/",
+            {"nickname": "FreshNick"},
+            format="json",
+            HTTP_X_CSRFTOKEN=fresh_csrf_token,
+            HTTP_ORIGIN=self.secure_origin,
+            secure=True,
+        )
+
+        self.assertEqual(fresh_update_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(fresh_update_response.data["nickname"], "FreshNick")
+
+        user.refresh_from_db()
+
+        self.assertEqual(user.nickname, "FreshNick")
+
     def test_logout_deletes_jwt_cookies(self) -> None:
         User.objects.create_user(
             email="logout@example.com",

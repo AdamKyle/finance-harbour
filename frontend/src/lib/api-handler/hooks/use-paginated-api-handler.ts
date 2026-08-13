@@ -35,6 +35,32 @@ const UsePaginatedApiHandler = <
   const previousSearchTextRef = useRef(searchText);
   const previousFiltersRef = useRef<F>(filters);
   const previousAdditionalParamsRef = useRef(params.additionalParams);
+  const pageAdvanceLockRef = useRef(false);
+  const requestSequenceRef = useRef(0);
+
+  const handleRequestError = useCallback(
+    (errorInstance: unknown) => {
+      if (errorInstance instanceof AxiosError) {
+        const axiosResponse = errorInstance.response;
+
+        if (!axiosResponse) {
+          setError({ message: errorInstance.message });
+
+          return;
+        }
+
+        setError(axiosResponse.data || { message: errorInstance.message });
+
+        return;
+      }
+
+      setError({
+        message:
+          'We could not load the requested information. Please try again.',
+      });
+    },
+    [setError]
+  );
 
   const fetchPaginatedData = useCallback(async () => {
     if (params.enabled === false) {
@@ -43,11 +69,13 @@ const UsePaginatedApiHandler = <
       return;
     }
 
-    if (refresh) {
-      setError(null);
-    }
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
+    setError(null);
 
-    if (page > 1) {
+    if (page === 1) {
+      setLoading(true);
+    } else {
       setIsLoadingMore(true);
     }
 
@@ -65,49 +93,102 @@ const UsePaginatedApiHandler = <
         },
       });
 
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+
       setResponse(result);
       setData((previousData) =>
         page === 1 ? result.data : [...previousData, ...result.data]
       );
       setCanLoadMore(result.meta.can_load_more);
     } catch (errorInstance) {
-      if (errorInstance instanceof AxiosError) {
-        const response = errorInstance.response;
-
-        if (!response) {
-          return;
-        }
-
-        /**
-         * If we are not logged in, reload to put them back on the login screen.
-         */
-        if (response.status === 401) {
-          window.location.reload();
-        }
-
-        setError(errorInstance.response?.data || null);
-      } else {
-        setError(null);
+      if (requestSequence === requestSequenceRef.current) {
+        handleRequestError(errorInstance);
       }
     } finally {
-      setLoading(false);
-      setIsLoadingMore(false);
+      if (requestSequence === requestSequenceRef.current) {
+        setLoading(false);
+        setIsLoadingMore(false);
+        pageAdvanceLockRef.current = false;
+      }
     }
   }, [
     apiHandler,
     filters,
+    handleRequestError,
     page,
     params.additionalParams,
     params.enabled,
     perPage,
-    refresh,
+    searchText,
+    url,
+  ]);
+
+  const reloadLoadedPages = useCallback(async () => {
+    if (params.enabled === false) {
+      return;
+    }
+
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
+    const highestLoadedPage = page;
+    setError(null);
+    setLoading(true);
+
+    try {
+      const pageRequests = Array.from(
+        { length: highestLoadedPage },
+        (_, pageIndex) =>
+          apiHandler.get<
+            PaginatedApiResponseDefinition<T[]>,
+            AxiosRequestConfig<PaginatedApiResponseDefinition<T[]>>
+          >(url, {
+            params: {
+              per_page: perPage,
+              page: pageIndex + 1,
+              search_text: searchText,
+              filters,
+              ...params.additionalParams,
+            },
+          })
+      );
+      const pageResponses = await Promise.all(pageRequests);
+
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
+
+      const latestResponse = pageResponses[pageResponses.length - 1];
+      setData(pageResponses.flatMap((pageResponse) => pageResponse.data));
+      setResponse(latestResponse);
+      setCanLoadMore(latestResponse.meta.can_load_more);
+    } catch (errorInstance) {
+      if (requestSequence === requestSequenceRef.current) {
+        handleRequestError(errorInstance);
+      }
+    } finally {
+      if (requestSequence === requestSequenceRef.current) {
+        setLoading(false);
+        setIsLoadingMore(false);
+        pageAdvanceLockRef.current = false;
+      }
+    }
+  }, [
+    apiHandler,
+    filters,
+    handleRequestError,
+    page,
+    params.additionalParams,
+    params.enabled,
+    perPage,
     searchText,
     url,
   ]);
 
   useEffect(() => {
-    fetchPaginatedData().catch(console.error);
-  }, [fetchPaginatedData]);
+    void fetchPaginatedData();
+  }, [fetchPaginatedData, refresh]);
 
   useEffect(() => {
     const isSameSearch = previousSearchTextRef.current === searchText;
@@ -134,10 +215,19 @@ const UsePaginatedApiHandler = <
   }, [filters, params.additionalParams, searchText]);
 
   const onEndReached = () => {
-    if (!canLoadMore || isLoadingMore) {
+    if (!canLoadMore) {
       return;
     }
 
+    if (isLoadingMore) {
+      return;
+    }
+
+    if (pageAdvanceLockRef.current) {
+      return;
+    }
+
+    pageAdvanceLockRef.current = true;
     setPage((previousValue) => previousValue + 1);
   };
 
@@ -150,6 +240,7 @@ const UsePaginatedApiHandler = <
     isLoadingMore,
     page,
     onEndReached,
+    reloadLoadedPages,
     setSearchText,
     setFilters,
     setPage,

@@ -32,9 +32,6 @@ class ImportantExpensesSaveRequest(RequestValidatorEngine):
 
         selected_keys = self.validated_data["selected_keys"]
 
-        if not isinstance(selected_keys, list):
-            return
-
         if any(not isinstance(source_key, str) for source_key in selected_keys):
             raise ValidationError({"selected_keys": ["Every selected expense key must be a string."]})
 

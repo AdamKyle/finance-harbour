@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "core",
     "onboarding",
     "debt_profile",
+    "budget",
 ]
 
 MIDDLEWARE = [

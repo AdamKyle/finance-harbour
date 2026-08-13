@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from authentication.models import User
-from debt_profile.models import DebtProfile
+from debt_profile.models import DebtProfile, ExpensePaymentSchedule, ExpensePaymentTiming, PaycheckPosition
 
 
 class DebtProfileViewTest(APITestCase):
@@ -21,7 +21,6 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "VISA",
                         "current_balance_cents": 100000,
-                        "interest_rate_basis_points": 2000,
                         "minimum_payment_cents": 5000,
                         "current_payment_cents": 5000,
                     }
@@ -50,14 +49,12 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "VISA",
                         "current_balance_cents": 100000,
-                        "interest_rate_basis_points": 2000,
                         "minimum_payment_cents": 5000,
                         "current_payment_cents": 5000,
                     },
                     {
                         "label": "MasterCard",
                         "current_balance_cents": 200000,
-                        "interest_rate_basis_points": 2500,
                         "minimum_payment_cents": 8000,
                         "current_payment_cents": 10000,
                     },
@@ -85,7 +82,6 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "Test",
                         "current_balance_cents": 150000,
-                        "interest_rate_basis_points": 1500,
                         "minimum_payment_cents": 3000,
                         "current_payment_cents": 3000,
                     }
@@ -113,7 +109,6 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "Test",
                         "current_balance_cents": 100000,
-                        "interest_rate_basis_points": 1500,
                         "minimum_payment_cents": 7500,
                         "current_payment_cents": 7500,
                     }
@@ -141,7 +136,6 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "Test",
                         "current_balance_cents": 100000,
-                        "interest_rate_basis_points": 1500,
                         "minimum_payment_cents": 7500,
                         "current_payment_cents": 9000,
                     }
@@ -153,34 +147,6 @@ class DebtProfileViewTest(APITestCase):
 
         saved = DebtProfile.objects.get(user=user)
         self.assertEqual(saved.debts[0]["current_payment_cents"], 9000)
-
-    def test_interest_rate_basis_points_is_stored_as_basis_points(self) -> None:
-        user = User.objects.create_user(
-            email="interestbp@example.com",
-            password="StrongPassword123!",
-        )
-        client = APIClient()
-        client.force_authenticate(user=user)
-
-        client.patch(
-            "/api/debt-profile/",
-            {
-                "debts": [
-                    {
-                        "label": "Test",
-                        "current_balance_cents": 100000,
-                        "interest_rate_basis_points": 1975,
-                        "minimum_payment_cents": 5000,
-                        "current_payment_cents": 5000,
-                    }
-                ]
-            },
-            format="json",
-            secure=True,
-        )
-
-        saved = DebtProfile.objects.get(user=user)
-        self.assertEqual(saved.debts[0]["interest_rate_basis_points"], 1975)
 
     def test_negative_amounts_are_rejected(self) -> None:
         user = User.objects.create_user(
@@ -197,7 +163,6 @@ class DebtProfileViewTest(APITestCase):
                     {
                         "label": "Test",
                         "current_balance_cents": -100,
-                        "interest_rate_basis_points": 1500,
                         "minimum_payment_cents": 5000,
                         "current_payment_cents": 5000,
                     }
@@ -298,5 +263,87 @@ class DebtProfileViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             set(response.data.keys()),
-            {"income_per_pay_period_cents", "pay_period_type", "debts"},
+            {"income_per_pay_period_cents", "pay_period_type", "debts", "next_pay_date", "payment_schedules"},
         )
+
+    def test_read_returns_only_owned_debt_payment_schedules(self) -> None:
+        jane = User.objects.create_user(email="schedule-read-jane@example.com", password="StrongPassword123!")
+        bob = User.objects.create_user(email="schedule-read-bob@example.com", password="StrongPassword123!")
+        jane_profile = DebtProfile.objects.create(user=jane)
+        bob_profile = DebtProfile.objects.create(user=bob)
+        ExpensePaymentSchedule.objects.create(
+            debt_profile=jane_profile,
+            source_key="debt:0",
+            timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            day_of_month=12,
+        )
+        ExpensePaymentSchedule.objects.create(
+            debt_profile=bob_profile,
+            source_key="debt:0",
+            timing=ExpensePaymentTiming.PAYCHECK_POSITION,
+            paycheck_position=PaycheckPosition.FIRST,
+        )
+        client = APIClient()
+        client.force_authenticate(user=jane)
+
+        response = client.get("/api/debt-profile/", secure=True)
+
+        self.assertEqual(
+            response.data["payment_schedules"],
+            [
+                {
+                    "source_key": "debt:0",
+                    "timing": "DAY_OF_MONTH",
+                    "paycheck_position": None,
+                    "day_of_month": 12,
+                    "auto_deducted": False,
+                }
+            ],
+        )
+
+    def test_authenticated_user_can_save_next_pay_date(self) -> None:
+        import datetime
+
+        from django.utils import timezone
+
+        user = User.objects.create_user(
+            email="nextpaydate@example.com",
+            password="StrongPassword123!",
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+        future_date = (timezone.localdate() + datetime.timedelta(days=14)).isoformat()
+
+        response = client.patch(
+            "/api/debt-profile/",
+            {"next_pay_date": future_date},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["next_pay_date"], future_date)
+        self.assertEqual(DebtProfile.objects.get(user=user).next_pay_date.isoformat(), future_date)
+
+    def test_past_next_pay_date_is_rejected(self) -> None:
+        import datetime
+
+        from django.utils import timezone
+
+        user = User.objects.create_user(
+            email="pastpaydate@example.com",
+            password="StrongPassword123!",
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+        past_date = (timezone.localdate() - datetime.timedelta(days=1)).isoformat()
+
+        response = client.patch(
+            "/api/debt-profile/",
+            {"next_pay_date": past_date},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("next_pay_date", response.data)

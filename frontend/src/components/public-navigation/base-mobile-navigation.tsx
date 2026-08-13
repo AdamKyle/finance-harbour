@@ -1,7 +1,9 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, Transition } from 'motion/react';
 import { NavLink } from 'react-router';
 
 import type BaseMobileNavigationProps from './types/base-mobile-navigation-props';
+
+import AuthenticatedProfileMenu from 'components/authenticated-navigation/authenticated-profile-menu';
 
 import type NavigationItemDefinition from 'router/public-routes/definitions/navigation-item-definition';
 
@@ -14,6 +16,8 @@ const BaseMobileNavigation = ({
   mobileMenuId,
   navigationItems,
   shouldReduceMotion,
+  isAuthenticated,
+  isAuthenticationLoading,
   onCloseMenu,
   onLogin,
   onRegister,
@@ -42,54 +46,101 @@ const BaseMobileNavigation = ({
     );
   };
 
-  return (
-    <AnimatePresence initial={false}>
-      {isMenuOpen && (
-        <motion.div
-          key="mobile-menu"
-          id={mobileMenuId}
-          initial={
-            shouldReduceMotion ? false : { height: 0, opacity: 0, y: -8 }
-          }
-          animate={{ height: 'auto', opacity: 1, y: 0 }}
-          exit={
-            shouldReduceMotion
-              ? { opacity: 0 }
-              : { height: 0, opacity: 0, y: -8 }
-          }
-          transition={
-            shouldReduceMotion
-              ? { duration: 0 }
-              : { duration: 0.24, ease: 'easeOut' }
-          }
-          className="border-storm-dust-200 dark:border-storm-dust-800 overflow-hidden border-t md:hidden"
+  const renderAccountActions = () => {
+    if (isAuthenticationLoading) {
+      return (
+        <span
+          role="status"
+          className="text-storm-dust-500 dark:text-storm-dust-400 py-2 text-center text-sm"
         >
-          <div className="py-4">
-            <div className="flex flex-col gap-2">
-              {navigationItems.map(renderNavigationLink)}
-            </div>
+          Checking session&hellip;
+        </span>
+      );
+    }
 
-            <div className="border-storm-dust-200 dark:border-storm-dust-800 mt-4 flex flex-col gap-3 border-t pt-4">
-              <ToggleDarkMode show_label />
+    if (isAuthenticated) {
+      return (
+        <div className="flex justify-end">
+          <AuthenticatedProfileMenu shouldReduceMotion={shouldReduceMotion} />
+        </div>
+      );
+    }
 
-              <Button
-                on_click={onLogin}
-                label="Login"
-                variant={ButtonVariant.PRIMARY}
-                additional_css="w-full"
-              />
+    return (
+      <>
+        <Button
+          on_click={onLogin}
+          label="Login"
+          variant={ButtonVariant.PRIMARY}
+          additional_css="w-full"
+        />
 
-              <Button
-                on_click={onRegister}
-                label="Register"
-                variant={ButtonVariant.SUCCESS}
-                additional_css="w-full"
-              />
-            </div>
+        <Button
+          on_click={onRegister}
+          label="Register"
+          variant={ButtonVariant.SUCCESS}
+          additional_css="w-full"
+        />
+      </>
+    );
+  };
+
+  const getInitialAnimation = () => {
+    if (shouldReduceMotion) {
+      return false;
+    }
+
+    return { height: 0, opacity: 0, y: -8 };
+  };
+
+  const getExitAnimation = () => {
+    if (shouldReduceMotion) {
+      return { opacity: 0 };
+    }
+
+    return { height: 0, opacity: 0, y: -8 };
+  };
+
+  const getTransition = (): Transition => {
+    if (shouldReduceMotion) {
+      return { duration: 0 };
+    }
+
+    return { duration: 0.24, ease: 'easeOut' };
+  };
+
+  const renderMobileMenu = () => {
+    if (!isMenuOpen) {
+      return null;
+    }
+
+    return (
+      <motion.div
+        key="mobile-menu"
+        id={mobileMenuId}
+        initial={getInitialAnimation()}
+        animate={{ height: 'auto', opacity: 1, y: 0 }}
+        exit={getExitAnimation()}
+        transition={getTransition()}
+        className="border-storm-dust-200 dark:border-storm-dust-800 overflow-hidden border-t md:hidden"
+      >
+        <div className="py-4">
+          <div className="flex flex-col gap-2">
+            {navigationItems.map(renderNavigationLink)}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+          <div className="border-storm-dust-200 dark:border-storm-dust-800 mt-4 flex flex-col gap-3 border-t pt-4">
+            <ToggleDarkMode show_label />
+
+            {renderAccountActions()}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <AnimatePresence initial={false}>{renderMobileMenu()}</AnimatePresence>
   );
 };
 

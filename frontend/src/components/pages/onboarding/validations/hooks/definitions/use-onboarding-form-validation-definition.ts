@@ -8,6 +8,7 @@ import {
   ExpenseFieldErrorsDefinition,
   IncomeFieldErrorsDefinition,
   LeftOverWarningFieldErrorsDefinition,
+  PaymentScheduleFieldErrorsDefinition,
   ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { OnboardingValidationResultDefinition } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-validation-result-definition';
@@ -25,6 +26,11 @@ export interface UseOnboardingFormValidationDefinition {
   validateExpenseStep: (
     expenseForm: ExpenseStepFormState
   ) => OnboardingValidationResultDefinition<ExpenseFieldErrorsDefinition>;
+  validatePaymentScheduleStep: (
+    debtForm: DebtStepFormState,
+    expenseForm: ExpenseStepFormState,
+    incomeForm: IncomeStepFormState
+  ) => OnboardingValidationResultDefinition<PaymentScheduleFieldErrorsDefinition>;
   validateLeftOverWarningStep: (
     warningForm: LeftOverWarningStepFormState
   ) => OnboardingValidationResultDefinition<LeftOverWarningFieldErrorsDefinition>;

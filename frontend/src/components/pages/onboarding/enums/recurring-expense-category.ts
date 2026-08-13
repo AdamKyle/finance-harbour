@@ -1,0 +1,10 @@
+export enum RecurringExpenseCategory {
+  RENT_OR_MORTGAGE = 'RENT_OR_MORTGAGE',
+  UTILITIES = 'UTILITIES',
+  FOOD = 'FOOD',
+  INTERNET = 'INTERNET',
+  PHONE = 'PHONE',
+  CAR_PAYMENT = 'CAR_PAYMENT',
+  INSURANCE = 'INSURANCE',
+  MISC = 'MISC',
+}

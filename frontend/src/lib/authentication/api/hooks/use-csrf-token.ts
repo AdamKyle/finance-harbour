@@ -1,39 +1,24 @@
-import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosError } from 'axios';
 import { useCallback, useState } from 'react';
 
-import CsrfResponseDefinition from './definitions/csrf-response-definition';
 import UseCsrfTokenDefinition from './definitions/use-csrf-token-definition';
 
 import { useApiHandler } from 'lib/api-handler/hooks/use-api-handler';
-import { AuthenticationApiUrls } from 'lib/authentication/api/enums/authentication-api-urls';
 
 export const useCsrfToken = (): UseCsrfTokenDefinition => {
-  const { apiHandler, getUrl } = useApiHandler();
+  const { apiHandler } = useApiHandler();
 
   const [error, setError] = useState<UseCsrfTokenDefinition['error']>(null);
   const [loading, setLoading] = useState(false);
 
-  const url = getUrl(AuthenticationApiUrls.CSRF);
-
-  const hasCsrfToken = (): boolean => {
-    return document.cookie
-      .split('; ')
-      .some((cookieValue) => cookieValue.startsWith('csrftoken='));
-  };
-
   const fetchCsrfToken = useCallback(async () => {
-    if (hasCsrfToken()) {
-      return null;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      return await apiHandler.get<
-        CsrfResponseDefinition,
-        AxiosRequestConfig<AxiosResponse<CsrfResponseDefinition>>
-      >(url);
+      const csrfToken = await apiHandler.ensureCsrfToken();
+
+      return { csrfToken };
     } catch (err) {
       if (err instanceof AxiosError) {
         setError(err.response?.data || null);
@@ -43,11 +28,18 @@ export const useCsrfToken = (): UseCsrfTokenDefinition => {
     } finally {
       setLoading(false);
     }
-  }, [apiHandler, url]);
+  }, [apiHandler]);
+
+  const refreshCsrfToken = useCallback(async () => {
+    apiHandler.clearCsrfToken();
+
+    return fetchCsrfToken();
+  }, [apiHandler, fetchCsrfToken]);
 
   return {
     error,
     fetchCsrfToken,
     loading,
+    refreshCsrfToken,
   };
 };

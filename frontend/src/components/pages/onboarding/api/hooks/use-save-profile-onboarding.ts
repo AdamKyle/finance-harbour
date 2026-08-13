@@ -2,7 +2,10 @@ import { AxiosError } from 'axios';
 import { useCallback, useState } from 'react';
 
 import { SaveProfileOnboardingRequestDefinition } from './definitions/save-profile-onboarding-request-definition';
-import { UseSaveProfileOnboardingDefinition } from './definitions/use-save-profile-onboarding-definition';
+import {
+  SaveProfileOnboardingResponseDefinition,
+  UseSaveProfileOnboardingDefinition,
+} from './definitions/use-save-profile-onboarding-definition';
 
 import { useApiHandler } from 'lib/api-handler/hooks/use-api-handler';
 
@@ -18,17 +21,21 @@ export const useSaveProfileOnboarding =
     const save = useCallback(
       async (
         data: SaveProfileOnboardingRequestDefinition
-      ): Promise<{ ok: boolean; error?: string }> => {
+      ): Promise<{
+        ok: boolean;
+        data?: SaveProfileOnboardingResponseDefinition;
+        error?: string;
+      }> => {
         setLoading(true);
 
         try {
-          await apiHandler.patch<
-            object,
+          const response = await apiHandler.patch<
+            SaveProfileOnboardingResponseDefinition,
             object,
             SaveProfileOnboardingRequestDefinition
           >(url, data);
 
-          return { ok: true };
+          return { ok: true, data: response };
         } catch (err) {
           if (err instanceof AxiosError) {
             return {

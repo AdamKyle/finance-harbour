@@ -1,4 +1,5 @@
 from debt_profile.views.request_validators.debt_profile_patch_request import DebtProfilePatchRequest
+from debt_profile.views.request_validators.important_expenses_index_request import ImportantExpensesIndexRequest
 from debt_profile.views.request_validators.important_expenses_save_request import ImportantExpensesSaveRequest
 from debt_profile.views.request_validators.left_over_warning_threshold_request import LeftOverWarningThresholdRequest
 from debt_profile.views.request_validators.monthly_expense_patch_request import MonthlyExpensePatchRequest
@@ -7,6 +8,7 @@ from debt_profile.views.request_validators.payment_plan_patch_request import Pay
 __all__ = [
     "DebtProfilePatchRequest",
     "ImportantExpensesSaveRequest",
+    "ImportantExpensesIndexRequest",
     "LeftOverWarningThresholdRequest",
     "MonthlyExpensePatchRequest",
     "PaymentPlanPatchRequest",

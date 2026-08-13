@@ -58,6 +58,24 @@ class OnboardingProgressViewSetTest(APITestCase):
         self.assertEqual(response.data["current_step"], "debts")
         self.assertEqual(OnboardingProgress.objects.get(user=user).current_step, "debts")
 
+    def test_patch_saves_payment_schedule_step(self) -> None:
+        user = User.objects.create_user(
+            email="patchschedule@example.com",
+            password="StrongPassword123!",
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.patch(
+            "/api/onboarding/progress/",
+            {"current_step": "payment_schedule"},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["current_step"], "payment_schedule")
+
     def test_patch_saves_completed_steps(self) -> None:
         user = User.objects.create_user(
             email="patchcompleted@example.com",

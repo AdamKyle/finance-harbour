@@ -1,3 +1,4 @@
 from debt_profile.structures.important_expense_card_structure import ImportantExpenseCardStructure
+from debt_profile.structures.important_expense_page_structure import ImportantExpensePageStructure
 
-__all__ = ["ImportantExpenseCardStructure"]
+__all__ = ["ImportantExpenseCardStructure", "ImportantExpensePageStructure"]

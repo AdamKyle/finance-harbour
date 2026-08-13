@@ -12,6 +12,6 @@ docker compose exec -T backend coverage run \
   --omit="*/migrations/*,*/tests/*,manage.py,config/*" \
   manage.py test
 
-docker compose exec -T backend coverage report -m
+docker compose exec -T backend coverage report -m --fail-under=100
 
 echo "Backend checks passed. Continuing push."

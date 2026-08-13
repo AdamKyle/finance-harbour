@@ -1,45 +1,30 @@
 import clsx from 'clsx';
 import React, { ChangeEvent } from 'react';
 
-import profileImage2 from 'assets/profile-images/profile-image-2.png';
-import profileImage3 from 'assets/profile-images/profile-image-3.png';
-import profileImage4 from 'assets/profile-images/profile-image-4.png';
-import profileImageOne from 'assets/profile-images/profile-image-one.png';
+import { AVATAR_OPTIONS } from 'configuration/avatar-config';
 
 import ProfileStepProps from 'components/pages/onboarding/types/profile-step-props';
 
 import Input from 'ui/form-elements/input';
 
 const ProfileStep = ({ request, setRequest, error }: ProfileStepProps) => {
-  const defaultPhoto = {
-    id: 'avatar-d',
-    label: 'Animated young man at Finance Harbour',
-    src: profileImage4,
+  const getSelectedAvatar = () => {
+    for (const photo of AVATAR_OPTIONS) {
+      if (photo.id === request.profile_photo) {
+        return photo;
+      }
+    }
+
+    return AVATAR_OPTIONS[3];
   };
-  const profilePhotos = [
-    {
-      id: 'avatar-a',
-      label: 'Animated woman with long dark hair at Finance Harbour',
-      src: profileImageOne,
-    },
-    {
-      id: 'avatar-b',
-      label: 'Animated man with dark hair at Finance Harbour',
-      src: profileImage2,
-    },
-    {
-      id: 'avatar-c',
-      label: 'Animated woman with curly hair at Finance Harbour',
-      src: profileImage3,
-    },
-    defaultPhoto,
-  ];
 
-  const selected =
-    profilePhotos.find((photo) => photo.id === request.profile_photo) ??
-    defaultPhoto;
+  const selected = getSelectedAvatar();
 
-  const alternates = profilePhotos.filter((photo) => photo.id !== selected.id);
+  const getAlternateAvatars = () => {
+    return AVATAR_OPTIONS.filter((photo) => photo.id !== selected.id);
+  };
+
+  const alternates = getAlternateAvatars();
 
   const handleSelect = (id: string) => {
     setRequest({ ...request, profile_photo: id });

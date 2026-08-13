@@ -6,31 +6,55 @@ import SectionWithTitleProps from './types/section-with-title-props';
 import { NavigationRoutes } from 'router/enums/navigation-routes';
 import { navigateToRoute } from 'router/utils/navigate-to-route';
 
+import { ButtonVariant } from 'ui/buttons/enums/button-variant';
+import IconButton from 'ui/buttons/icon-button';
 import Card from 'ui/cards/card';
 
 const SectionWithTitle = ({
   children,
   title,
+  back_route = NavigationRoutes.HOME,
+  back_state,
+  on_back,
 }: SectionWithTitleProps): ReactNode => {
   const navigate = useNavigate();
   const titleId = useId();
 
   const handleGoBack = () => {
-    navigateToRoute(navigate, NavigationRoutes.HOME);
+    if (on_back !== undefined) {
+      on_back();
+
+      return;
+    }
+
+    if (back_state !== undefined) {
+      void navigate(back_route, { state: back_state });
+
+      return;
+    }
+
+    navigateToRoute(navigate, back_route);
+  };
+
+  const renderContent = () => {
+    if (children === undefined) {
+      return null;
+    }
+
+    return <Card>{children}</Card>;
   };
 
   return (
     <main className="bg-storm-dust-50 text-storm-dust-950 dark:bg-storm-dust-950 dark:text-storm-dust-50 flex-1 px-4 py-8 transition-colors sm:px-6 sm:py-12 lg:py-16">
       <section aria-labelledby={titleId} className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center gap-3 sm:mb-8">
-          <button
-            type="button"
-            onClick={handleGoBack}
-            aria-label={`Go back from ${title}`}
-            className="focus:ring-storm-dust-400 text-storm-dust-700 hover:border-storm-dust-300 hover:bg-storm-dust-100 dark:text-storm-dust-200 dark:hover:border-storm-dust-600 dark:hover:bg-storm-dust-800 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-transparent transition focus:ring-2 focus:outline-hidden"
-          >
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-          </button>
+          <IconButton
+            icon="fa-solid fa-arrow-left"
+            label={`Go back from ${title}`}
+            variant={ButtonVariant.Default}
+            on_click={handleGoBack}
+            additional_css="shrink-0"
+          />
 
           <h1
             id={titleId}
@@ -40,7 +64,7 @@ const SectionWithTitle = ({
           </h1>
         </div>
 
-        <Card>{children}</Card>
+        {renderContent()}
       </section>
     </main>
   );

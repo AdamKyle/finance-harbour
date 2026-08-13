@@ -6,6 +6,7 @@ import ExpenseStep from './steps/expense-step';
 import ImportantExpensesStep from './steps/important-expenses-step';
 import IncomeStep from './steps/income-step';
 import LeftOverWarningStep from './steps/left-over-warning-step';
+import PaymentScheduleStep from './steps/payment-schedule-step';
 import ProfileStep from './steps/profile-step';
 import { DebtStepFormState } from './types/debt-step-form-state';
 import { ExpenseStepFormState } from './types/expense-step-form-state';
@@ -19,7 +20,11 @@ import {
 import { ProfileStepFormState } from './types/profile-step-form-state';
 import { useScrollToTop } from '../../../util/hooks/use-scroll-to-top';
 
-import { useCompleteOnboarding } from 'components/pages/onboarding/api/hooks/use-complete-onboarding';
+import { FinanceHarbourScreen } from 'configuration/screen-manager/enums/finance-harbour-screen';
+import { useFHScreenNavigation } from 'configuration/screen-manager/screen-manager-kit';
+
+import { useAuthentication } from 'lib/authentication/hooks/use-authentication';
+
 import { useImportantExpenses } from 'components/pages/onboarding/api/hooks/use-important-expenses';
 import { useOnboardingProgress } from 'components/pages/onboarding/api/hooks/use-onboarding-progress';
 import { useSaveDebtProfile } from 'components/pages/onboarding/api/hooks/use-save-debt-profile';
@@ -30,6 +35,8 @@ import { useSaveRequiredExpenses } from 'components/pages/onboarding/api/hooks/u
 import {
   mapDebtFormToApiRequest,
   mapExpenseFormToApiRequest,
+  mapDebtSchedulesToApiRequest,
+  mapExpenseSchedulesToApiRequest,
   mapIncomeFormToApiRequest,
   mapLeftOverWarningFormToApiRequest,
   mapProfileFormToApiRequest,
@@ -40,16 +47,16 @@ import {
   ExpenseFieldErrorsDefinition,
   IncomeFieldErrorsDefinition,
   LeftOverWarningFieldErrorsDefinition,
+  PaymentScheduleFieldErrorsDefinition,
   ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { useOnboardingFormValidation } from 'components/pages/onboarding/validations/hooks/use-onboarding-form-validation';
-
-import { navigateToRoute } from 'router/utils/navigate-to-route';
 
 import FormWizard from 'ui/form-wizard/form-wizard';
 import Step from 'ui/form-wizard/step';
 
 const Onboarding = () => {
+  const { setAuthenticatedUser } = useAuthentication();
   const {
     progress,
     requestData,
@@ -69,21 +76,19 @@ const Onboarding = () => {
     canLoadMore: canLoadMoreImportantExpenses,
     onEndReached: loadMoreImportantExpenses,
     setRefresh: setImportantExpensesRefresh,
+    setPage: setImportantExpensesPage,
   } = useImportantExpenses();
   const { save: saveRequiredExpenses, loading: requiredExpensesLoading } =
     useSaveRequiredExpenses();
   const { save: saveLeftOverWarning, loading: warningThresholdLoading } =
     useSaveLeftOverWarningThreshold();
-  const {
-    complete,
-    loading: completeLoading,
-    error: completeError,
-  } = useCompleteOnboarding({ navigate_to_route: navigateToRoute });
+  const { resetTo } = useFHScreenNavigation();
   const {
     validateProfileStep,
     validateDebtStep,
     validateIncomeStep,
     validateExpenseStep,
+    validatePaymentScheduleStep,
     validateLeftOverWarningStep,
   } = useOnboardingFormValidation();
 
@@ -100,48 +105,15 @@ const Onboarding = () => {
     useState<ExpenseFieldErrorsDefinition>({});
   const [warningFieldErrors, setWarningFieldErrors] =
     useState<LeftOverWarningFieldErrorsDefinition>({});
+  const [paymentScheduleStepError, setPaymentScheduleStepError] = useState('');
+  const [paymentScheduleFieldErrors, setPaymentScheduleFieldErrors] =
+    useState<PaymentScheduleFieldErrorsDefinition>({});
   const [saveError, setSaveError] = useState('');
   const formRef = useRef<HTMLElement>(null);
   const { scrollToTop } = useScrollToTop({
     targetRef: formRef,
     focusTarget: true,
   });
-
-  const isLoading =
-    profileLoading ||
-    debtLoading ||
-    expenseLoading ||
-    requiredExpensesLoading ||
-    warningThresholdLoading ||
-    completeLoading;
-  const initialIndex = useMemo(() => {
-    if (!progress) {
-      return 0;
-    }
-
-    const progressStepIndex = ONBOARDING_STEP_ORDER.indexOf(
-      progress.current_step
-    );
-
-    return progressStepIndex >= 0 ? progressStepIndex : 0;
-  }, [progress]);
-  const available_step_indexes = useMemo(() => {
-    if (!progress) {
-      return [0];
-    }
-
-    return ONBOARDING_STEP_ORDER.reduce<number[]>((acc, step_id, index) => {
-      if (
-        progress.completed_steps.includes(step_id) ||
-        step_id === progress.current_step
-      ) {
-        acc.push(index);
-      }
-
-      return acc;
-    }, []);
-  }, [progress]);
-  const saveApiError = saveError ? { message: saveError } : null;
 
   useEffect(() => {
     if (requestData.important_expenses.selected_keys.length > 0) {
@@ -167,6 +139,57 @@ const Onboarding = () => {
     requestData.important_expenses.selected_keys.length,
     setRequestData,
   ]);
+  const initialIndex = useMemo(() => {
+    if (!progress) {
+      return 0;
+    }
+
+    const progressStepIndex = ONBOARDING_STEP_ORDER.indexOf(
+      progress.current_step
+    );
+
+    if (progressStepIndex < 0) {
+      return 0;
+    }
+
+    return progressStepIndex;
+  }, [progress]);
+  const available_step_indexes = useMemo(() => {
+    if (!progress) {
+      return [0];
+    }
+
+    return ONBOARDING_STEP_ORDER.reduce<number[]>((acc, step_id, index) => {
+      if (
+        progress.completed_steps.includes(step_id) ||
+        step_id === progress.current_step
+      ) {
+        acc.push(index);
+      }
+
+      return acc;
+    }, []);
+  }, [progress]);
+
+  const isLoading =
+    profileLoading ||
+    debtLoading ||
+    expenseLoading ||
+    requiredExpensesLoading ||
+    warningThresholdLoading;
+  let saveApiError = null;
+
+  if (saveError !== '') {
+    saveApiError = { message: saveError };
+  }
+
+  const getSaveError = (error: string | undefined, fallback: string) => {
+    if (error === undefined) {
+      return fallback;
+    }
+
+    return error;
+  };
 
   const handleProfileRequestChange = (profileRequest: ProfileStepFormState) => {
     setRequestData((currentRequest) => ({
@@ -235,9 +258,21 @@ const Onboarding = () => {
       );
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save profile');
+        setSaveError(getSaveError(saveResult.error, 'Failed to save profile'));
 
         return false;
+      }
+
+      if (saveResult.data) {
+        const { profile_photo } = saveResult.data;
+
+        setAuthenticatedUser((current) => {
+          if (current === null) {
+            return null;
+          }
+
+          return { ...current, profile_photo };
+        });
       }
     } else if (currentStep === OnboardingStepId.DEBTS) {
       const validationResult = validateDebtStep(requestData.debts);
@@ -256,7 +291,7 @@ const Onboarding = () => {
       );
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save debts');
+        setSaveError(getSaveError(saveResult.error, 'Failed to save debts'));
 
         return false;
       }
@@ -276,7 +311,7 @@ const Onboarding = () => {
       );
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save income');
+        setSaveError(getSaveError(saveResult.error, 'Failed to save income'));
 
         return false;
       }
@@ -297,22 +332,80 @@ const Onboarding = () => {
       );
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save expenses');
+        setSaveError(getSaveError(saveResult.error, 'Failed to save expenses'));
 
         return false;
       }
 
+      setImportantExpensesPage(1);
       setImportantExpensesRefresh((currentRefresh) => !currentRefresh);
     } else if (currentStep === OnboardingStepId.IMPORTANT_EXPENSES) {
-      const saveResult = await saveRequiredExpenses(
-        requestData.important_expenses
+      const candidateKeys = new Set(
+        importantExpenseCards.map((expenseCard) => expenseCard.key)
       );
+      const selectedCandidateKeys =
+        requestData.important_expenses.selected_keys.filter((sourceKey) =>
+          candidateKeys.has(sourceKey)
+        );
+      const saveResult = await saveRequiredExpenses({
+        selected_keys: selectedCandidateKeys,
+      });
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save important expenses');
+        setSaveError(
+          getSaveError(saveResult.error, 'Failed to save important expenses')
+        );
 
         return false;
       }
+    } else if (currentStep === OnboardingStepId.PAYMENT_SCHEDULE) {
+      const validationResult = validatePaymentScheduleStep(
+        requestData.debts,
+        requestData.expenses,
+        requestData.income
+      );
+
+      setPaymentScheduleFieldErrors(validationResult.field_errors);
+      setPaymentScheduleStepError(validationResult.step_error);
+
+      if (!validationResult.is_valid) {
+        scrollToTop();
+
+        return false;
+      }
+
+      const debtScheduleResult = await saveDebtProfile(
+        mapDebtSchedulesToApiRequest(requestData.debts)
+      );
+
+      if (!debtScheduleResult.ok) {
+        setSaveError(
+          getSaveError(
+            debtScheduleResult.error,
+            'Failed to save debt schedules'
+          )
+        );
+
+        return false;
+      }
+
+      const expenseScheduleResult = await saveMonthlyExpense(
+        mapExpenseSchedulesToApiRequest(requestData.expenses)
+      );
+
+      if (!expenseScheduleResult.ok) {
+        setSaveError(
+          getSaveError(
+            expenseScheduleResult.error,
+            'Failed to save expense schedules'
+          )
+        );
+
+        return false;
+      }
+
+      setImportantExpensesPage(1);
+      setImportantExpensesRefresh((currentRefresh) => !currentRefresh);
     } else if (currentStep === OnboardingStepId.LEFT_OVER_WARNING) {
       const validationResult = validateLeftOverWarningStep(
         requestData.left_over_warning
@@ -331,7 +424,9 @@ const Onboarding = () => {
       );
 
       if (!saveResult.ok) {
-        setSaveError(saveResult.error ?? 'Failed to save warning threshold');
+        setSaveError(
+          getSaveError(saveResult.error, 'Failed to save warning threshold')
+        );
 
         return false;
       }
@@ -345,8 +440,8 @@ const Onboarding = () => {
 
     if (currentStep === OnboardingStepId.CONCLUDE) {
       setSaveError('');
-
-      return complete();
+      resetTo(FinanceHarbourScreen.BUDGET_BUILDING);
+      return true;
     }
 
     const saved = await saveCurrentStep(stepIndex);
@@ -355,23 +450,39 @@ const Onboarding = () => {
       return false;
     }
 
-    const completedSteps = [...(progress?.completed_steps ?? [])];
+    let completedSteps: OnboardingStepId[] = [];
+
+    if (progress !== null) {
+      completedSteps = [...progress.completed_steps];
+    }
 
     if (!completedSteps.includes(currentStep)) {
       completedSteps.push(currentStep);
     }
 
-    const candidateNextStep =
-      ONBOARDING_STEP_ORDER[stepIndex + 1] ?? ONBOARDING_STEP_ORDER[stepIndex];
-    const existingCurrentStepIndex = progress
-      ? ONBOARDING_STEP_ORDER.indexOf(progress.current_step)
-      : -1;
+    let candidateNextStep = ONBOARDING_STEP_ORDER[stepIndex];
+
+    if (ONBOARDING_STEP_ORDER[stepIndex + 1] !== undefined) {
+      candidateNextStep = ONBOARDING_STEP_ORDER[stepIndex + 1];
+    }
+    let existingCurrentStepIndex = -1;
+
+    if (progress !== null) {
+      existingCurrentStepIndex = ONBOARDING_STEP_ORDER.indexOf(
+        progress.current_step
+      );
+    }
+
     const candidateNextStepIndex =
       ONBOARDING_STEP_ORDER.indexOf(candidateNextStep);
-    const nextStep =
-      candidateNextStepIndex > existingCurrentStepIndex
-        ? candidateNextStep
-        : (progress?.current_step ?? candidateNextStep);
+    let nextStep = candidateNextStep;
+
+    if (
+      candidateNextStepIndex <= existingCurrentStepIndex &&
+      progress !== null
+    ) {
+      nextStep = progress.current_step;
+    }
 
     const progressResult = await saveProgress({
       current_step: nextStep,
@@ -381,8 +492,10 @@ const Onboarding = () => {
 
     if (!progressResult.ok) {
       setSaveError(
-        progressResult.error ??
+        getSaveError(
+          progressResult.error,
           'We could not save your onboarding progress. Please try again.'
+        )
       );
 
       return false;
@@ -407,17 +520,26 @@ const Onboarding = () => {
       setSaveError('');
     }
 
+    let progressCurrentStep = ONBOARDING_STEP_ORDER[currentIndex];
+    let progressCompletedSteps: OnboardingStepId[] = [];
+
+    if (progress !== null) {
+      progressCurrentStep = progress.current_step;
+      progressCompletedSteps = progress.completed_steps;
+    }
+
     const progressResult = await saveProgress({
-      current_step:
-        progress?.current_step ?? ONBOARDING_STEP_ORDER[currentIndex],
-      completed_steps: progress?.completed_steps ?? [],
+      current_step: progressCurrentStep,
+      completed_steps: progressCompletedSteps,
       form_data: buildOnboardingProgressFormData(requestData),
     });
 
     if (!progressResult.ok) {
       setSaveError(
-        progressResult.error ??
+        getSaveError(
+          progressResult.error,
           'We could not save your onboarding progress. Please try again.'
+        )
       );
 
       return false;
@@ -444,13 +566,13 @@ const Onboarding = () => {
       tabIndex={-1}
     >
       <FormWizard
-        total_steps={7}
+        total_steps={8}
         initial_index={initialIndex}
         name="Get started"
         is_loading={isLoading}
         on_request_next={handleRequestNext}
         on_request_step_change={handleRequestStepChange}
-        form_error={completeError ?? saveApiError}
+        form_error={saveApiError}
         available_step_indexes={available_step_indexes}
       >
         <Step step_title="Let's setup your profile!">
@@ -483,7 +605,18 @@ const Onboarding = () => {
             fieldErrors={expenseFieldErrors}
           />
         </Step>
-        <Step step_title="Select whats important">
+        <Step step_title="When do these payments happen?">
+          <PaymentScheduleStep
+            debts={requestData.debts}
+            expenses={requestData.expenses}
+            income={requestData.income}
+            setDebts={handleDebtRequestChange}
+            setExpenses={handleExpenseRequestChange}
+            stepError={paymentScheduleStepError}
+            fieldErrors={paymentScheduleFieldErrors}
+          />
+        </Step>
+        <Step step_title="Select what's important">
           <ImportantExpensesStep
             request={requestData.important_expenses}
             setRequest={handleImportantExpensesRequestChange}
@@ -491,7 +624,9 @@ const Onboarding = () => {
             loading={importantExpensesLoading}
             is_loading_more={importantExpensesLoadingMore}
             can_load_more={canLoadMoreImportantExpenses}
-            on_load_more={loadMoreImportantExpenses}
+            on_load_more={() => {
+              loadMoreImportantExpenses();
+            }}
           />
         </Step>
         <Step step_title="Left over warning threshold">
@@ -502,7 +637,12 @@ const Onboarding = () => {
           />
         </Step>
         <Step step_title="Finish" show_title={false}>
-          <ConcludeStep />
+          <ConcludeStep
+            debts={requestData.debts}
+            expenses={requestData.expenses}
+            income={requestData.income}
+            important_expenses={requestData.important_expenses}
+          />
         </Step>
       </FormWizard>
     </main>

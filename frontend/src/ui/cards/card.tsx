@@ -3,7 +3,11 @@ import type { ReactNode } from 'react';
 
 import type CardProps from './types/card-props';
 
-const Card = ({ children, additional_css }: CardProps): ReactNode => {
+const Card = ({
+  children,
+  additional_css,
+  content_css,
+}: CardProps): ReactNode => {
   return (
     <div
       className={clsx(
@@ -12,7 +16,7 @@ const Card = ({ children, additional_css }: CardProps): ReactNode => {
         additional_css
       )}
     >
-      <div className="p-3 md:p-4 xl:p-6">{children}</div>
+      <div className={clsx('p-3 md:p-4 xl:p-6', content_css)}>{children}</div>
     </div>
   );
 };

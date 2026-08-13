@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 
+import { formatCentsAsDollars } from 'lib/money/money';
+
 import ImportantExpensesStepProps from 'components/pages/onboarding/types/important-expenses-step-props';
-import { formatCentsAsDollars } from 'components/pages/onboarding/utils/money';
 
 import Button from 'ui/buttons/button';
 import { ButtonVariant } from 'ui/buttons/enums/button-variant';
@@ -37,7 +38,7 @@ const ImportantExpensesStep = ({
     }
 
     if (cards.length === 0) {
-      return <p>No saved monthly expenses are available.</p>;
+      return <p>All saved monthly expenses are already handled.</p>;
     }
 
     return (
@@ -110,12 +111,12 @@ const ImportantExpensesStep = ({
   return (
     <div className="flex flex-col gap-6">
       <p className="text-storm-dust-600 dark:text-storm-dust-300 text-sm">
-        Now lets set up whats most important. What has to be paid in full every
-        month, for example Maybe your rent has to be paid in full on the 1st of
-        every month or you have{'  '}insurance that auto gets deducted
+        Choose any remaining expenses that must be protected. Bills already
+        marked Important because they are required or automatically deducted are
+        handled for you.
       </p>
 
-      <div className="max-h-96 overflow-y-auto pr-1">{renderCards()}</div>
+      <div>{renderCards()}</div>
 
       {renderLoadMore()}
     </div>

@@ -1,12 +1,12 @@
-import SectionWithTitle from 'ui/sections/section-with-title';
+import SlidingContentPanel from 'ui/panels/sliding-content-panel';
 
 const Help = () => {
   return (
-    <SectionWithTitle title="Help">
+    <SlidingContentPanel title="Help">
       <p className="text-storm-dust-700 dark:text-storm-dust-200 text-base leading-7">
         Help content and support information will be available here.
       </p>
-    </SectionWithTitle>
+    </SlidingContentPanel>
   );
 };
 

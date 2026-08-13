@@ -5,6 +5,7 @@ import { AxiosErrorDefinition } from 'lib/api-handler/definitions/axios-error-de
 export default interface FormWizardProps {
   total_steps: number;
   initial_index?: number;
+  requested_index?: number;
   name?: string;
   is_loading?: boolean;
   render_loading_icon?: () => ReactNode;
@@ -16,4 +17,5 @@ export default interface FormWizardProps {
   children: ReactNode;
   form_error: AxiosErrorDefinition | null;
   available_step_indexes: number[];
+  render_card?: boolean;
 }

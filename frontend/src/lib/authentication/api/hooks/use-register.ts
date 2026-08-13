@@ -19,7 +19,7 @@ export const useRegister = ({
 }: UseRegistrationParamsDefinition): UseRegistrationDefinition => {
   const navigate = useNavigate();
   const { apiHandler, getUrl } = useApiHandler();
-  const { fetchCsrfToken } = useCsrfToken();
+  const { fetchCsrfToken, refreshCsrfToken } = useCsrfToken();
   const { setAuthenticatedUser } = useAuthentication();
 
   const [error, setError] = useState<UseRegistrationDefinition['error']>(null);
@@ -48,6 +48,7 @@ export const useRegister = ({
         password: requestData.password,
       });
 
+      await refreshCsrfToken();
       setAuthenticatedUser(result.user);
 
       if (!result.user.completed_onboarding) {
@@ -55,7 +56,7 @@ export const useRegister = ({
         return;
       }
 
-      navigate_to_route(navigate, NavigationRoutes.HOME);
+      navigate_to_route(navigate, NavigationRoutes.DASHBOARD);
     } catch (err) {
       if (err instanceof AxiosError) {
         setError(err.response?.data || null);
@@ -71,6 +72,7 @@ export const useRegister = ({
     requestData.email,
     requestData.password,
     setAuthenticatedUser,
+    refreshCsrfToken,
     url,
   ]);
 

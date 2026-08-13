@@ -16,6 +16,7 @@ const Input = ({
   help_text,
   inputMode,
   onChange,
+  onBlur,
   placeholder,
   required = false,
   value,
@@ -89,6 +90,7 @@ const Input = ({
         inputMode={inputMode}
         name={name}
         onChange={onChange}
+        onBlur={onBlur}
         placeholder={placeholder}
         required={required}
         type={type}

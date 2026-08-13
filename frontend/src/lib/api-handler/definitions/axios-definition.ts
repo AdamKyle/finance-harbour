@@ -1,6 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 
 export default interface AxiosDefinition {
+  setCsrfToken(token: string): void;
+  clearCsrfToken(): void;
+  ensureCsrfToken(): Promise<string>;
   /**
    * Handles GET requests.
    *

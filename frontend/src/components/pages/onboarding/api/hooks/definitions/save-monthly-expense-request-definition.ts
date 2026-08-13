@@ -1,13 +1,7 @@
-import { MiscExpenseEntryDefinition } from './misc-expense-entry-definition';
+import ExpensePaymentScheduleDefinition from './expense-payment-schedule-definition';
+import RecurringExpenseDefinition from './recurring-expense-definition';
 
 export interface SaveMonthlyExpenseRequestDefinition {
-  rent_or_mortgage_cents?: number;
-  water_cents?: number;
-  electricity_cents?: number;
-  food_cents?: number;
-  internet_cents?: number;
-  phone_cents?: number;
-  car_payment_cents?: number;
-  insurance_cents?: number;
-  misc_expenses?: MiscExpenseEntryDefinition[];
+  recurring_expenses?: RecurringExpenseDefinition[];
+  payment_schedules?: ExpensePaymentScheduleDefinition[];
 }

@@ -18,8 +18,6 @@ export const useActivityTimeout = (): UseActivityTimeoutDefinitions => {
           'You have been logged out due to inactivity. One moment while we redirect you.',
       });
 
-      window.location.reload();
-
       return;
     }
   };

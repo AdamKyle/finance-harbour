@@ -1,7 +1,10 @@
 import React, { ChangeEvent } from 'react';
 
-import { DebtEntryFormState } from 'components/pages/onboarding/types/debt-entry-form-state';
+import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
+import { DebtEntryStringFieldName } from 'components/pages/onboarding/types/debt-entry-form-state';
 import DebtStepProps from 'components/pages/onboarding/types/debt-step-props';
+import { DebtFieldErrorsDefinition } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 
 import { Alert } from 'ui/alerts/alert';
 import { AlertVariant } from 'ui/alerts/enums/alert-variant';
@@ -22,9 +25,14 @@ const DebtStep = ({
         {
           label: '',
           current_balance_dollars: '',
-          interest_rate_percent: '',
           minimum_payment_dollars: '',
           current_payment_dollars: '',
+          payment_schedule: {
+            timing: ExpensePaymentTiming.PAYCHECK_POSITION,
+            paycheck_position: PaycheckPosition.FIRST,
+            day_of_month: '',
+            auto_deducted: false,
+          },
         },
       ],
     });
@@ -38,12 +46,16 @@ const DebtStep = ({
 
   const handleDebtChange = (
     index: number,
-    field: keyof DebtEntryFormState,
+    field: DebtEntryStringFieldName,
     value: string
   ) => {
-    const updatedDebts = request.debts.map((debt, debtIndex) =>
-      debtIndex === index ? { ...debt, [field]: value } : debt
-    );
+    const updatedDebts = request.debts.map((debt, debtIndex) => {
+      if (debtIndex !== index) {
+        return debt;
+      }
+
+      return { ...debt, [field]: value };
+    });
 
     setRequest({ debts: updatedDebts });
   };
@@ -66,8 +78,16 @@ const DebtStep = ({
       {renderStepError()}
 
       {request.debts.map((debt, index) => {
-        const debtErrors = fieldErrors[index] ?? {};
-        const debtTitle = debt.label.trim() || `Debt ${index + 1}`;
+        let debtErrors: DebtFieldErrorsDefinition = {};
+        let debtTitle = `Debt ${index + 1}`;
+
+        if (fieldErrors[index] !== undefined) {
+          debtErrors = fieldErrors[index];
+        }
+
+        if (debt.label.trim() !== '') {
+          debtTitle = debt.label.trim();
+        }
 
         return (
           <div
@@ -117,23 +137,6 @@ const DebtStep = ({
               }}
             />
             <Input
-              id={`debt-interest-${index}`}
-              label="Interest rate (%)"
-              name={`debt-interest-${index}`}
-              type="text"
-              placeholder="0.00"
-              value={debt.interest_rate_percent}
-              error={debtErrors.interest_rate_percent}
-              has_error={debtErrors.interest_rate_percent !== undefined}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                handleDebtChange(
-                  index,
-                  'interest_rate_percent',
-                  e.target.value
-                );
-              }}
-            />
-            <Input
               id={`debt-min-payment-${index}`}
               label="Minimum payment ($)"
               name={`debt-min-payment-${index}`}
@@ -142,6 +145,7 @@ const DebtStep = ({
               value={debt.minimum_payment_dollars}
               error={debtErrors.minimum_payment_dollars}
               has_error={debtErrors.minimum_payment_dollars !== undefined}
+              required
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 handleDebtChange(
                   index,
@@ -159,6 +163,7 @@ const DebtStep = ({
               value={debt.current_payment_dollars}
               error={debtErrors.current_payment_dollars}
               has_error={debtErrors.current_payment_dollars !== undefined}
+              required
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 handleDebtChange(
                   index,

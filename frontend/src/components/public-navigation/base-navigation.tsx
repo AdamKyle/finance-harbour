@@ -4,7 +4,11 @@ import { Link, NavLink, useNavigate } from 'react-router';
 
 import BaseMobileNavigation from './base-mobile-navigation';
 
+import { useAuthentication } from 'lib/authentication/hooks/use-authentication';
+
 import mascotImage from 'assets/mascot/finance-harbour-mascot.png';
+
+import AuthenticatedProfileMenu from 'components/authenticated-navigation/authenticated-profile-menu';
 
 import { NavigationRoutes } from 'router/enums/navigation-routes';
 import type NavigationItemDefinition from 'router/public-routes/definitions/navigation-item-definition';
@@ -20,6 +24,8 @@ const BaseNavigation = () => {
   const navigate = useNavigate();
   const mobileMenuId = useId();
   const shouldReduceMotion = useReducedMotion();
+  const { authenticatedUser, loading: isAuthenticationLoading } =
+    useAuthentication();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -49,6 +55,14 @@ const BaseNavigation = () => {
     return 'fa-solid fa-bars';
   };
 
+  const getMobileMenuLabel = () => {
+    if (isMenuOpen) {
+      return 'Close navigation menu';
+    }
+
+    return 'Open navigation menu';
+  };
+
   const getNavigationLinkClassName = ({ isActive }: { isActive: boolean }) => {
     const baseClassName =
       'focus:ring-storm-dust-400 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition focus:ring-2 focus:outline-hidden';
@@ -70,6 +84,41 @@ const BaseNavigation = () => {
       >
         {navigationItem.label}
       </NavLink>
+    );
+  };
+
+  const renderDesktopAccountActions = () => {
+    if (isAuthenticationLoading) {
+      return (
+        <span
+          role="status"
+          className="text-storm-dust-500 dark:text-storm-dust-400 text-sm"
+        >
+          Checking session&hellip;
+        </span>
+      );
+    }
+
+    if (authenticatedUser) {
+      return (
+        <AuthenticatedProfileMenu shouldReduceMotion={shouldReduceMotion} />
+      );
+    }
+
+    return (
+      <>
+        <Button
+          on_click={handleLogin}
+          label="Login"
+          variant={ButtonVariant.PRIMARY}
+        />
+
+        <Button
+          on_click={handleRegister}
+          label="Register"
+          variant={ButtonVariant.SUCCESS}
+        />
+      </>
     );
   };
 
@@ -99,28 +148,14 @@ const BaseNavigation = () => {
           <div className="hidden items-center justify-end gap-3 md:flex">
             <ToggleDarkMode />
 
-            <Button
-              on_click={handleLogin}
-              label="Login"
-              variant={ButtonVariant.PRIMARY}
-            />
-
-            <Button
-              on_click={handleRegister}
-              label="Register"
-              variant={ButtonVariant.SUCCESS}
-            />
+            {renderDesktopAccountActions()}
           </div>
 
           <IconButton
             on_click={handleToggleMenu}
             icon={getMobileMenuIconClassName()}
-            label={
-              isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'
-            }
-            aria_label={
-              isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'
-            }
+            label={getMobileMenuLabel()}
+            aria_label={getMobileMenuLabel()}
             aria_expanded={isMenuOpen}
             aria_controls={mobileMenuId}
             variant={ButtonVariant.Default}
@@ -133,6 +168,8 @@ const BaseNavigation = () => {
           mobileMenuId={mobileMenuId}
           navigationItems={PUBLIC_NAVIGATION_ITEMS}
           shouldReduceMotion={shouldReduceMotion}
+          isAuthenticated={authenticatedUser !== null}
+          isAuthenticationLoading={isAuthenticationLoading}
           onCloseMenu={handleCloseMenu}
           onLogin={handleLogin}
           onRegister={handleRegister}

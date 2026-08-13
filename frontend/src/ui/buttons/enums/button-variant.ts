@@ -3,4 +3,6 @@ export enum ButtonVariant {
   PRIMARY,
   DANGER,
   Default,
+  GHOST,
+  WARNING,
 }

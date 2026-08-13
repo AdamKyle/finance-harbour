@@ -19,7 +19,7 @@ export const useGoogleSocialAuthCallback = ({
 }: UseGoogleSocialAuthCallbackParamsDefinition): UseGoogleSocialAuthCallbackDefinition => {
   const navigate = useNavigate();
   const { apiHandler, getUrl } = useApiHandler();
-  const { fetchCsrfToken } = useCsrfToken();
+  const { fetchCsrfToken, refreshCsrfToken } = useCsrfToken();
   const { setAuthenticatedUser } = useAuthentication();
 
   const [error, setError] =
@@ -47,6 +47,7 @@ export const useGoogleSocialAuthCallback = ({
         code: requestData.code,
       });
 
+      await refreshCsrfToken();
       setAuthenticatedUser(result.user);
 
       if (!result.user.completed_onboarding) {
@@ -54,7 +55,7 @@ export const useGoogleSocialAuthCallback = ({
         return;
       }
 
-      navigate_to_route(navigate, NavigationRoutes.HOME);
+      navigate_to_route(navigate, NavigationRoutes.DASHBOARD);
     } catch (err) {
       if (err instanceof AxiosError) {
         setError(
@@ -78,6 +79,7 @@ export const useGoogleSocialAuthCallback = ({
     navigate,
     navigate_to_route,
     requestData.code,
+    refreshCsrfToken,
     setAuthenticatedUser,
     url,
   ]);

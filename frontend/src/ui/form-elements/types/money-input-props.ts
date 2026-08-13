@@ -5,6 +5,7 @@ export default interface MoneyInputProps {
   value: string;
   has_error: boolean;
   on_value_change: (value: string) => void;
+  on_blur?: () => void;
   disabled?: boolean;
   error?: string;
   help_text?: string;

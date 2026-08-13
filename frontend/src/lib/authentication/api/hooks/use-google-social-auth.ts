@@ -18,7 +18,7 @@ export const useGoogleSocialAuth = (): UseGoogleSocialAuthDefinition => {
     authUrl.searchParams.set('scope', 'openid email profile');
     authUrl.searchParams.set('access_type', 'online');
 
-    window.location.href = authUrl.toString();
+    globalThis.location.assign(authUrl.toString());
   }, []);
 
   return {

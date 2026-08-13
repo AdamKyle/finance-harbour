@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 
 import UseScrollToTopDefinition, {
   UseScrollToTopOptions,
@@ -8,51 +8,19 @@ export const useScrollToTop = ({
   targetRef,
   focusTarget = false,
 }: UseScrollToTopOptions = {}): UseScrollToTopDefinition => {
-  const animationFrameRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current === null) {
-        return;
-      }
-
-      window.cancelAnimationFrame(animationFrameRef.current);
-    };
-  }, []);
-
   const scrollToTop = useCallback(() => {
-    if (animationFrameRef.current !== null) {
-      window.cancelAnimationFrame(animationFrameRef.current);
+    const targetElement = targetRef?.current;
+
+    if (targetElement === undefined || targetElement === null) {
+      return;
     }
 
-    animationFrameRef.current = window.requestAnimationFrame(() => {
-      animationFrameRef.current = null;
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-      const targetElement = targetRef?.current;
-
-      if (!targetElement) {
-        window.scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        });
-
-        return;
-      }
-
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-
-      if (!focusTarget) {
-        return;
-      }
-
+    if (focusTarget) {
       targetElement.focus({ preventScroll: true });
-    });
+    }
   }, [focusTarget, targetRef]);
 
-  return {
-    scrollToTop,
-  };
+  return { scrollToTop };
 };

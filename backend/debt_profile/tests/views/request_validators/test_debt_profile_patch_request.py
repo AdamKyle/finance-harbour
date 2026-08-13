@@ -1,4 +1,7 @@
+import datetime
+
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from debt_profile.views.request_validators import DebtProfilePatchRequest
@@ -33,7 +36,6 @@ class DebtProfilePatchRequestTest(TestCase):
                     {
                         "label": "VISA",
                         "current_balance_cents": 10000,
-                        "interest_rate_basis_points": 2000,
                         "minimum_payment_cents": 500,
                         "current_payment_cents": 500,
                     }
@@ -83,9 +85,82 @@ class DebtProfilePatchRequestTest(TestCase):
                     {
                         "label": "Test",
                         "current_balance_cents": -100,
-                        "interest_rate_basis_points": 1500,
                         "minimum_payment_cents": 5000,
                         "current_payment_cents": 5000,
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("debts", raised_error.exception.detail)
+
+    def test_missing_minimum_payment_fails_validation(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "debts": [
+                    {
+                        "label": "VISA",
+                        "current_balance_cents": 10000,
+                        "current_payment_cents": 500,
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("debts", raised_error.exception.detail)
+
+    def test_missing_current_payment_fails_validation(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "debts": [
+                    {
+                        "label": "VISA",
+                        "current_balance_cents": 10000,
+                        "minimum_payment_cents": 500,
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("debts", raised_error.exception.detail)
+
+    def test_zero_minimum_payment_fails_validation(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "debts": [
+                    {
+                        "label": "VISA",
+                        "current_balance_cents": 10000,
+                        "minimum_payment_cents": 0,
+                        "current_payment_cents": 500,
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("debts", raised_error.exception.detail)
+
+    def test_zero_current_payment_fails_validation(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "debts": [
+                    {
+                        "label": "VISA",
+                        "current_balance_cents": 10000,
+                        "minimum_payment_cents": 500,
+                        "current_payment_cents": 0,
                     }
                 ]
             }
@@ -103,3 +178,43 @@ class DebtProfilePatchRequestTest(TestCase):
             request.validate()
 
         self.assertIn("debts", raised_error.exception.detail)
+
+    def test_valid_next_pay_date_passes_validation(self) -> None:
+        future_date = (timezone.localdate() + datetime.timedelta(days=7)).isoformat()
+        request = DebtProfilePatchRequest({"next_pay_date": future_date})
+
+        request.validate()
+
+        self.assertEqual(request.validated_data["next_pay_date"], future_date)
+
+    def test_past_next_pay_date_fails_validation(self) -> None:
+        past_date = (timezone.localdate() - datetime.timedelta(days=1)).isoformat()
+        request = DebtProfilePatchRequest({"next_pay_date": past_date})
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("next_pay_date", raised_error.exception.detail)
+
+    def test_invalid_next_pay_date_format_fails_validation(self) -> None:
+        request = DebtProfilePatchRequest({"next_pay_date": "not-a-date"})
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("next_pay_date", raised_error.exception.detail)
+
+    def test_null_next_pay_date_passes_validation(self) -> None:
+        request = DebtProfilePatchRequest({"next_pay_date": None})
+
+        request.validate()
+
+        self.assertIsNone(request.validated_data["next_pay_date"])
+
+    def test_today_next_pay_date_passes_validation(self) -> None:
+        today = timezone.localdate().isoformat()
+        request = DebtProfilePatchRequest({"next_pay_date": today})
+
+        request.validate()
+
+        self.assertEqual(request.validated_data["next_pay_date"], today)

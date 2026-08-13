@@ -1,34 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useContext } from 'react';
 
-import type UseDarkModeDefinition from './definitions/use-dark-mode-definition';
+import { DarkModeContext } from 'ui/dark-mode-toggle/context/dark-mode-context';
+import UseDarkModeDefinition from 'ui/dark-mode-toggle/hooks/definitions/use-dark-mode-definition';
 
-const THEME_STORAGE_KEY = 'finance-harbour-theme';
+export const useDarkMode = (): UseDarkModeDefinition => {
+  const context = useContext(DarkModeContext);
 
-const useDarkMode = (): UseDarkModeDefinition => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'dark';
-  });
+  if (context === null) {
+    throw new Error('useDarkMode must be used within DarkModeProvider');
+  }
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-    window.localStorage.setItem(
-      THEME_STORAGE_KEY,
-      isDarkMode ? 'dark' : 'light'
-    );
-  }, [isDarkMode]);
+  let darkModeLabel = 'Dark mode';
+  let darkModeAriaLabel = 'Switch to dark mode';
+  let darkModeIconClassName = 'fa-solid fa-moon';
 
-  const handleToggleDarkMode = () => {
-    setIsDarkMode((currentIsDarkMode) => !currentIsDarkMode);
-  };
+  if (context.is_dark_mode) {
+    darkModeLabel = 'Light mode';
+    darkModeAriaLabel = 'Switch to light mode';
+    darkModeIconClassName = 'fa-solid fa-sun';
+  }
 
   return {
-    darkModeAriaLabel: isDarkMode
-      ? 'Switch to light mode'
-      : 'Switch to dark mode',
-    darkModeIconClassName: isDarkMode ? 'fa-solid fa-sun' : 'fa-solid fa-moon',
-    darkModeLabel: isDarkMode ? 'Light mode' : 'Dark mode',
-    isDarkMode,
-    onToggleDarkMode: handleToggleDarkMode,
+    darkModeAriaLabel,
+    darkModeIconClassName,
+    darkModeLabel,
+    isDarkMode: context.is_dark_mode,
+    onToggleDarkMode: context.toggle_dark_mode,
   };
 };
 

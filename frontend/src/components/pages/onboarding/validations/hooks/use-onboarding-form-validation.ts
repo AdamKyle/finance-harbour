@@ -1,22 +1,70 @@
-import { ExpenseStepFormState } from 'components/pages/onboarding/types/expense-step-form-state';
 import {
   dollarsToCents,
   validateDollarInput,
-  validateInterestRateInput,
   validatePositiveDollarInput,
-} from 'components/pages/onboarding/utils/money';
+} from 'lib/money/money';
+
+import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
+import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
+import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
 import {
   DebtFieldErrorsDefinition,
   ExpenseFieldErrorsDefinition,
   IncomeFieldErrorsDefinition,
   LeftOverWarningFieldErrorsDefinition,
   MiscExpenseFieldErrorsDefinition,
+  PaymentScheduleFieldErrorsDefinition,
   ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { UseOnboardingFormValidationDefinition } from 'components/pages/onboarding/validations/hooks/definitions/use-onboarding-form-validation-definition';
 
 export const useOnboardingFormValidation =
   (): UseOnboardingFormValidationDefinition => {
+    const isPaycheckPositionInvalid = (
+      position: PaycheckPosition,
+      payPeriodType: PayPeriodType | ''
+    ) => {
+      if (payPeriodType === PayPeriodType.MONTHLY) {
+        return position !== PaycheckPosition.FIRST;
+      }
+
+      if (payPeriodType === PayPeriodType.BIWEEKLY) {
+        return (
+          position !== PaycheckPosition.FIRST &&
+          position !== PaycheckPosition.SECOND &&
+          position !== PaycheckPosition.LAST
+        );
+      }
+
+      return payPeriodType !== PayPeriodType.WEEKLY;
+    };
+
+    const isPaymentScheduleInvalid = (
+      timing: ExpensePaymentTiming,
+      position: PaycheckPosition,
+      day: string,
+      autoDeducted: boolean | null,
+      payPeriodType: PayPeriodType | ''
+    ) => {
+      if (timing === ExpensePaymentTiming.EVERY_PAYCHECK) {
+        return false;
+      }
+
+      if (timing === ExpensePaymentTiming.PAYCHECK_POSITION) {
+        return isPaycheckPositionInvalid(position, payPeriodType);
+      }
+
+      const parsedDay = Number.parseInt(day, 10);
+
+      return (
+        !/^\d+$/.test(day) ||
+        parsedDay < 1 ||
+        parsedDay > 31 ||
+        autoDeducted === null
+      );
+    };
+
     const validateProfileStep: UseOnboardingFormValidationDefinition['validateProfileStep'] =
       (profileForm) => {
         const fieldErrors: ProfileFieldErrorsDefinition = {};
@@ -47,57 +95,44 @@ export const useOnboardingFormValidation =
         }
 
         const fieldErrors = debtForm.debts.map((debtEntry) => {
-          const debtFieldErrors: DebtFieldErrorsDefinition = {};
+          const debtErrors: DebtFieldErrorsDefinition = {};
 
-          if (!debtEntry.label.trim()) {
-            debtFieldErrors.label = 'Label is required';
+          if (debtEntry.label.trim() === '') {
+            debtErrors.label = 'Label is required';
           }
 
           const balanceValidation = validatePositiveDollarInput(
             debtEntry.current_balance_dollars,
             'Current balance'
           );
-
-          if (!balanceValidation.valid) {
-            debtFieldErrors.current_balance_dollars = balanceValidation.error;
-          }
-
-          const interestValidation = validateInterestRateInput(
-            debtEntry.interest_rate_percent
-          );
-
-          if (!interestValidation.valid) {
-            debtFieldErrors.interest_rate_percent = interestValidation.error;
-          }
-
-          const minimumPaymentValidation = validatePositiveDollarInput(
+          const minimumValidation = validatePositiveDollarInput(
             debtEntry.minimum_payment_dollars,
             'Minimum payment'
           );
-
-          if (!minimumPaymentValidation.valid) {
-            debtFieldErrors.minimum_payment_dollars =
-              minimumPaymentValidation.error;
-          }
-
-          const currentPaymentValidation = validatePositiveDollarInput(
+          const currentValidation = validatePositiveDollarInput(
             debtEntry.current_payment_dollars,
             'Current payment'
           );
 
-          if (!currentPaymentValidation.valid) {
-            debtFieldErrors.current_payment_dollars =
-              currentPaymentValidation.error;
+          if (!balanceValidation.valid) {
+            debtErrors.current_balance_dollars = balanceValidation.error;
           }
 
-          return debtFieldErrors;
-        });
+          if (!minimumValidation.valid) {
+            debtErrors.minimum_payment_dollars = minimumValidation.error;
+          }
 
-        const hasFieldErrors = fieldErrors.some(
-          (debtFieldErrors) => Object.keys(debtFieldErrors).length > 0
+          if (!currentValidation.valid) {
+            debtErrors.current_payment_dollars = currentValidation.error;
+          }
+
+          return debtErrors;
+        });
+        const hasErrors = fieldErrors.some(
+          (errors) => Object.keys(errors).length > 0
         );
 
-        if (!hasFieldErrors) {
+        if (!hasErrors) {
           return {
             is_valid: true,
             step_error: '',
@@ -115,7 +150,6 @@ export const useOnboardingFormValidation =
     const validateIncomeStep: UseOnboardingFormValidationDefinition['validateIncomeStep'] =
       (incomeForm) => {
         const fieldErrors: IncomeFieldErrorsDefinition = {};
-
         const incomeValidation = validatePositiveDollarInput(
           incomeForm.income_per_pay_period_dollars,
           'Income'
@@ -125,8 +159,23 @@ export const useOnboardingFormValidation =
           fieldErrors.income_per_pay_period_dollars = incomeValidation.error;
         }
 
-        if (!incomeForm.pay_period_type) {
+        if (incomeForm.pay_period_type === '') {
           fieldErrors.pay_period_type = 'Select a pay period';
+        }
+
+        if (incomeForm.next_pay_date === '') {
+          fieldErrors.next_pay_date = 'Select your next pay date.';
+        } else {
+          const parsedDate = new Date(`${incomeForm.next_pay_date}T12:00:00`);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (Number.isNaN(parsedDate.getTime())) {
+            fieldErrors.next_pay_date = 'Enter a valid date.';
+          } else if (parsedDate < today) {
+            fieldErrors.next_pay_date =
+              'Next pay date must not be in the past.';
+          }
         }
 
         return {
@@ -138,86 +187,109 @@ export const useOnboardingFormValidation =
 
     const validateExpenseStep: UseOnboardingFormValidationDefinition['validateExpenseStep'] =
       (expenseForm) => {
-        const expenseFieldKeys: (keyof Omit<
-          ExpenseStepFormState,
-          'misc_expenses'
-        >)[] = [
-          'rent_or_mortgage_dollars',
-          'water_dollars',
-          'electricity_dollars',
-          'food_dollars',
-          'internet_dollars',
-          'phone_dollars',
-          'car_payment_dollars',
-          'insurance_dollars',
-        ];
         const fieldErrors: ExpenseFieldErrorsDefinition = {};
 
-        for (const fieldKey of expenseFieldKeys) {
-          const submittedValue = expenseForm[fieldKey];
-
-          if (submittedValue !== '') {
-            const validationResult = validateDollarInput(submittedValue);
-
-            if (!validationResult.valid) {
-              fieldErrors[fieldKey] = validationResult.error;
-            }
+        const validateAmount = (
+          fieldName: Exclude<
+            keyof ExpenseFieldErrorsDefinition,
+            'misc_expenses'
+          >,
+          value: string
+        ) => {
+          if (value === '') {
+            return;
           }
-        }
 
-        const miscExpenseFieldErrors = expenseForm.misc_expenses.map(
-          (miscExpense) => {
-            const miscFieldErrors: MiscExpenseFieldErrorsDefinition = {};
-            const hasLabel = miscExpense.label.trim() !== '';
-            const hasAmount = miscExpense.amount_dollars.trim() !== '';
+          const validation = validateDollarInput(value);
 
-            if (!hasLabel && !hasAmount) {
-              return miscFieldErrors;
-            }
-
-            if (hasLabel && !hasAmount) {
-              miscFieldErrors.amount_dollars =
-                'Enter an amount, or remove this expense.';
-            } else if (!hasLabel && hasAmount) {
-              miscFieldErrors.label = 'Enter a label, or remove this expense.';
-            } else {
-              const validationResult = validateDollarInput(
-                miscExpense.amount_dollars
-              );
-
-              if (!validationResult.valid) {
-                miscFieldErrors.amount_dollars = validationResult.error;
-              }
-            }
-
-            return miscFieldErrors;
+          if (!validation.valid) {
+            fieldErrors[fieldName] = validation.error;
           }
-        );
+        };
+
+        const isPositiveAmount = (value: string) => {
+          return (
+            value !== '' &&
+            validateDollarInput(value).valid &&
+            dollarsToCents(value) > 0
+          );
+        };
 
         if (
-          miscExpenseFieldErrors.some(
-            (miscFieldErrors) => Object.keys(miscFieldErrors).length > 0
-          )
+          expenseForm.utilities_dollars !== '' &&
+          expenseForm.utility_type === ''
         ) {
-          fieldErrors.misc_expenses = miscExpenseFieldErrors;
+          fieldErrors.utility_type = 'Select the type of utilities bill.';
         }
 
-        const hasPositiveCommonExpense = expenseFieldKeys.some(
-          (fieldKey) =>
-            validateDollarInput(expenseForm[fieldKey]).valid &&
-            expenseForm[fieldKey] !== '' &&
-            dollarsToCents(expenseForm[fieldKey]) > 0
-        );
-        const hasPositiveMiscExpense = expenseForm.misc_expenses.some(
-          (miscExpense) =>
-            miscExpense.label.trim() !== '' &&
-            validateDollarInput(miscExpense.amount_dollars).valid &&
-            miscExpense.amount_dollars !== '' &&
-            dollarsToCents(miscExpense.amount_dollars) > 0
-        );
-        const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+        if (
+          expenseForm.utility_type === UtilityType.CUSTOM &&
+          expenseForm.utility_custom_label.trim() === ''
+        ) {
+          fieldErrors.utility_custom_label = 'Enter a custom utility name.';
+        }
 
-        if (hasFieldErrors) {
+        validateAmount(
+          'rent_or_mortgage_dollars',
+          expenseForm.rent_or_mortgage_dollars
+        );
+        validateAmount('utilities_dollars', expenseForm.utilities_dollars);
+        validateAmount('food_dollars', expenseForm.food_dollars);
+
+        if (!expenseForm.utilities_includes_internet) {
+          validateAmount('internet_dollars', expenseForm.internet_dollars);
+        }
+
+        validateAmount('phone_dollars', expenseForm.phone_dollars);
+        validateAmount('car_payment_dollars', expenseForm.car_payment_dollars);
+        validateAmount('insurance_dollars', expenseForm.insurance_dollars);
+
+        const miscErrors = expenseForm.misc_expenses.map((expense) => {
+          const errors: MiscExpenseFieldErrorsDefinition = {};
+          const hasLabel = expense.label.trim() !== '';
+          const hasAmount = expense.amount_dollars.trim() !== '';
+
+          if (!hasLabel && !hasAmount) {
+            return errors;
+          }
+
+          if (!hasLabel) {
+            errors.label = 'Enter a label, or remove this expense.';
+          }
+
+          if (!hasAmount) {
+            errors.amount_dollars = 'Enter an amount, or remove this expense.';
+          } else {
+            const validation = validateDollarInput(expense.amount_dollars);
+
+            if (!validation.valid) {
+              errors.amount_dollars = validation.error;
+            }
+          }
+
+          return errors;
+        });
+
+        if (miscErrors.some((errors) => Object.keys(errors).length > 0)) {
+          fieldErrors.misc_expenses = miscErrors;
+        }
+
+        const hasPositiveCommonExpense =
+          isPositiveAmount(expenseForm.rent_or_mortgage_dollars) ||
+          isPositiveAmount(expenseForm.utilities_dollars) ||
+          isPositiveAmount(expenseForm.food_dollars) ||
+          (!expenseForm.utilities_includes_internet &&
+            isPositiveAmount(expenseForm.internet_dollars)) ||
+          isPositiveAmount(expenseForm.phone_dollars) ||
+          isPositiveAmount(expenseForm.car_payment_dollars) ||
+          isPositiveAmount(expenseForm.insurance_dollars);
+        const hasPositiveMiscExpense = expenseForm.misc_expenses.some(
+          (expense) =>
+            expense.label.trim() !== '' &&
+            isPositiveAmount(expense.amount_dollars)
+        );
+
+        if (Object.keys(fieldErrors).length > 0) {
           return {
             is_valid: false,
             step_error: 'Fix the errors below before continuing.',
@@ -233,26 +305,150 @@ export const useOnboardingFormValidation =
           };
         }
 
+        return { is_valid: true, step_error: '', field_errors: {} };
+      };
+
+    const validatePaymentScheduleStep: UseOnboardingFormValidationDefinition['validatePaymentScheduleStep'] =
+      (debtForm, expenseForm, incomeForm) => {
+        const fieldErrors: PaymentScheduleFieldErrorsDefinition = {};
+
+        const validateSchedule = (
+          sourceKey: string,
+          amount: string,
+          timing: ExpensePaymentTiming,
+          paycheckPosition: PaycheckPosition,
+          dayOfMonth: string,
+          autoDeducted: boolean | null
+        ) => {
+          if (
+            amount === '' ||
+            !validateDollarInput(amount).valid ||
+            dollarsToCents(amount) <= 0
+          ) {
+            return;
+          }
+
+          if (
+            isPaymentScheduleInvalid(
+              timing,
+              paycheckPosition,
+              dayOfMonth,
+              autoDeducted,
+              incomeForm.pay_period_type
+            )
+          ) {
+            fieldErrors[sourceKey] = 'Complete this payment schedule.';
+          }
+        };
+
+        validateSchedule(
+          'rent_or_mortgage',
+          expenseForm.rent_or_mortgage_dollars,
+          expenseForm.payment_schedules.rent_or_mortgage.timing,
+          expenseForm.payment_schedules.rent_or_mortgage.paycheck_position,
+          expenseForm.payment_schedules.rent_or_mortgage.day_of_month,
+          expenseForm.payment_schedules.rent_or_mortgage.auto_deducted
+        );
+        validateSchedule(
+          'utilities',
+          expenseForm.utilities_dollars,
+          expenseForm.payment_schedules.utilities.timing,
+          expenseForm.payment_schedules.utilities.paycheck_position,
+          expenseForm.payment_schedules.utilities.day_of_month,
+          expenseForm.payment_schedules.utilities.auto_deducted
+        );
+        validateSchedule(
+          'food',
+          expenseForm.food_dollars,
+          expenseForm.payment_schedules.food.timing,
+          expenseForm.payment_schedules.food.paycheck_position,
+          expenseForm.payment_schedules.food.day_of_month,
+          expenseForm.payment_schedules.food.auto_deducted
+        );
+
+        if (!expenseForm.utilities_includes_internet) {
+          validateSchedule(
+            'internet',
+            expenseForm.internet_dollars,
+            expenseForm.payment_schedules.internet.timing,
+            expenseForm.payment_schedules.internet.paycheck_position,
+            expenseForm.payment_schedules.internet.day_of_month,
+            expenseForm.payment_schedules.internet.auto_deducted
+          );
+        }
+
+        validateSchedule(
+          'phone',
+          expenseForm.phone_dollars,
+          expenseForm.payment_schedules.phone.timing,
+          expenseForm.payment_schedules.phone.paycheck_position,
+          expenseForm.payment_schedules.phone.day_of_month,
+          expenseForm.payment_schedules.phone.auto_deducted
+        );
+        validateSchedule(
+          'car_payment',
+          expenseForm.car_payment_dollars,
+          expenseForm.payment_schedules.car_payment.timing,
+          expenseForm.payment_schedules.car_payment.paycheck_position,
+          expenseForm.payment_schedules.car_payment.day_of_month,
+          expenseForm.payment_schedules.car_payment.auto_deducted
+        );
+        validateSchedule(
+          'insurance',
+          expenseForm.insurance_dollars,
+          expenseForm.payment_schedules.insurance.timing,
+          expenseForm.payment_schedules.insurance.paycheck_position,
+          expenseForm.payment_schedules.insurance.day_of_month,
+          expenseForm.payment_schedules.insurance.auto_deducted
+        );
+
+        expenseForm.misc_expenses.forEach((expense, index) => {
+          validateSchedule(
+            `misc:${index}`,
+            expense.amount_dollars,
+            expense.payment_schedule.timing,
+            expense.payment_schedule.paycheck_position,
+            expense.payment_schedule.day_of_month,
+            expense.payment_schedule.auto_deducted
+          );
+        });
+        debtForm.debts.forEach((debt, index) => {
+          validateSchedule(
+            `debt:${index}`,
+            debt.current_payment_dollars,
+            debt.payment_schedule.timing,
+            debt.payment_schedule.paycheck_position,
+            debt.payment_schedule.day_of_month,
+            debt.payment_schedule.auto_deducted
+          );
+        });
+
+        const isValid = Object.keys(fieldErrors).length === 0;
+        let stepError = '';
+
+        if (!isValid) {
+          stepError = 'Complete the schedule for each payment.';
+        }
+
         return {
-          is_valid: true,
-          step_error: '',
-          field_errors: {},
+          is_valid: isValid,
+          step_error: stepError,
+          field_errors: fieldErrors,
         };
       };
 
     const validateLeftOverWarningStep: UseOnboardingFormValidationDefinition['validateLeftOverWarningStep'] =
       (warningForm) => {
         const fieldErrors: LeftOverWarningFieldErrorsDefinition = {};
-        const validationResult = validateDollarInput(
+        const validation = validateDollarInput(
           warningForm.left_over_warning_amount_dollars
         );
 
         if (
           warningForm.left_over_warning_amount_dollars === '' ||
-          !validationResult.valid
+          !validation.valid
         ) {
-          fieldErrors.left_over_warning_amount_dollars =
-            validationResult.error ?? 'Enter a warning amount.';
+          fieldErrors.left_over_warning_amount_dollars = validation.error;
         }
 
         return {
@@ -267,6 +463,7 @@ export const useOnboardingFormValidation =
       validateDebtStep,
       validateIncomeStep,
       validateExpenseStep,
+      validatePaymentScheduleStep,
       validateLeftOverWarningStep,
     };
   };

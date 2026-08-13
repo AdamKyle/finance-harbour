@@ -7,6 +7,7 @@ class OnboardingProgressPartialUpdateRequest(RequestValidatorEngine):
         "debts",
         "income",
         "expenses",
+        "payment_schedule",
         "important_expenses",
         "left_over_warning",
         "conclude",

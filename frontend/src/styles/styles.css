@@ -1,10 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  --animate-indeterminate: indeterminate 1.5s ease-in-out infinite;
 
   /* Default Blue */
   --color-blue-bell-50: #f3f6fa;

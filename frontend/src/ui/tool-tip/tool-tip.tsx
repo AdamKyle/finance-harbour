@@ -1,10 +1,24 @@
 import clsx from 'clsx';
+import { KeyboardEvent } from 'react';
 
 import type ToolTipProps from './types/tool-tip-props';
 
 const ToolTip = ({ id, label, children, additional_css }: ToolTipProps) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    if (event.target instanceof HTMLElement) {
+      event.target.blur();
+    }
+  };
+
   return (
-    <div className={clsx('group relative inline-flex', additional_css)}>
+    <div
+      className={clsx('group relative inline-flex', additional_css)}
+      onKeyDownCapture={handleKeyDown}
+    >
       {children}
       <div
         id={id}

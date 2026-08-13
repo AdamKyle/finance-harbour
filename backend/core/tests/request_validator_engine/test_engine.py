@@ -62,6 +62,58 @@ class UniqueEmailRequest(RequestValidatorEngine):
     }
 
 
+class UnknownSimpleRuleRequest(RequestValidatorEngine):
+    rules = {
+        "value": ("unknown_rule",),
+    }
+
+
+class UnknownParameterizedRuleRequest(RequestValidatorEngine):
+    rules = {
+        "value": (("unknown_param", "some_value"),),
+    }
+
+
+class BadMaxLengthRuleValueRequest(RequestValidatorEngine):
+    rules = {
+        "value": (("max_length", "not-an-int"),),
+    }
+
+
+class BadMinLengthRuleValueRequest(RequestValidatorEngine):
+    rules = {
+        "value": (("min_length", "not-an-int"),),
+    }
+
+
+class BadMinValueRuleValueRequest(RequestValidatorEngine):
+    rules = {
+        "value": (("min_value", "not-an-int"),),
+    }
+
+
+class UniqueWithNonOptionsRequest(RequestValidatorEngine):
+    rules = {
+        "value": (("unique", "not-UniqueRuleOptions"),),
+    }
+
+
+class UniqueWithIgnoredValuesRequest(RequestValidatorEngine):
+    rules = {
+        "value": (
+            (
+                "unique",
+                UniqueRuleOptions(
+                    model=User,
+                    field="nickname",
+                    case_insensitive=False,
+                    ignored_values=("IGNORED",),
+                ),
+            ),
+        ),
+    }
+
+
 class RequestValidatorEngineTest(TestCase):
     def test_required_rule_rejects_a_missing_field(self) -> None:
         request_validator = RequiredRequest({})
@@ -188,3 +240,55 @@ class RequestValidatorEngineTest(TestCase):
             request_validator.validate()
 
         self.assertIn("email", raised_error.exception.detail)
+
+    def test_unknown_simple_rule_is_ignored(self) -> None:
+        request_validator = UnknownSimpleRuleRequest({"value": "hello"})
+
+        request_validator.validate()
+
+        self.assertEqual(request_validator.validated_data["value"], "hello")
+
+    def test_unknown_parameterized_rule_is_ignored(self) -> None:
+        request_validator = UnknownParameterizedRuleRequest({"value": "hello"})
+
+        request_validator.validate()
+
+        self.assertEqual(request_validator.validated_data["value"], "hello")
+
+    def test_max_length_with_non_int_rule_value_fails(self) -> None:
+        request_validator = BadMaxLengthRuleValueRequest({"value": "hello"})
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request_validator.validate()
+
+        self.assertIn("value", raised_error.exception.detail)
+
+    def test_min_length_with_non_int_rule_value_fails(self) -> None:
+        request_validator = BadMinLengthRuleValueRequest({"value": "hello"})
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request_validator.validate()
+
+        self.assertIn("value", raised_error.exception.detail)
+
+    def test_min_value_with_non_int_rule_value_fails(self) -> None:
+        request_validator = BadMinValueRuleValueRequest({"value": 5})
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request_validator.validate()
+
+        self.assertIn("value", raised_error.exception.detail)
+
+    def test_unique_with_non_options_rule_value_is_ignored(self) -> None:
+        request_validator = UniqueWithNonOptionsRequest({"value": "hello"})
+
+        request_validator.validate()
+
+        self.assertEqual(request_validator.validated_data["value"], "hello")
+
+    def test_unique_with_ignored_value_passes_without_db_check(self) -> None:
+        request_validator = UniqueWithIgnoredValuesRequest({"value": "IGNORED"})
+
+        request_validator.validate()
+
+        self.assertEqual(request_validator.validated_data["value"], "IGNORED")

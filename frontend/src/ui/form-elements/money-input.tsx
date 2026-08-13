@@ -10,6 +10,7 @@ const MoneyInput = ({
   value,
   has_error,
   on_value_change,
+  on_blur,
   disabled = false,
   error,
   help_text,
@@ -40,7 +41,12 @@ const MoneyInput = ({
     }
 
     const [wholePart, decimalPart] = decimalParts;
-    const wholePartIsValid = Array.from(wholePart).every(
+    let unsignedWholePart = wholePart;
+
+    if (wholePart.startsWith('-')) {
+      unsignedWholePart = wholePart.slice(1);
+    }
+    const wholePartIsValid = Array.from(unsignedWholePart).every(
       (character) => character >= '0' && character <= '9'
     );
     const decimalPartIsValid =
@@ -67,6 +73,7 @@ const MoneyInput = ({
       value={formatDisplayValue(value)}
       has_error={has_error}
       onChange={handleChange}
+      onBlur={on_blur}
       disabled={disabled}
       error={error}
       help_text={help_text}

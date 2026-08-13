@@ -19,7 +19,7 @@ export const useLogin = ({
 }: UseLoginParamsDefinition): UseLoginDefinition => {
   const navigate = useNavigate();
   const { apiHandler, getUrl } = useApiHandler();
-  const { fetchCsrfToken } = useCsrfToken();
+  const { fetchCsrfToken, refreshCsrfToken } = useCsrfToken();
   const { setAuthenticatedUser } = useAuthentication();
 
   const [error, setError] = useState<UseLoginDefinition['error']>(null);
@@ -46,6 +46,7 @@ export const useLogin = ({
         password: requestData.password,
       });
 
+      await refreshCsrfToken();
       setAuthenticatedUser(result.user);
 
       if (!result.user.completed_onboarding) {
@@ -53,7 +54,7 @@ export const useLogin = ({
         return;
       }
 
-      navigate_to_route(navigate, NavigationRoutes.HOME);
+      navigate_to_route(navigate, NavigationRoutes.DASHBOARD);
     } catch (err) {
       if (err instanceof AxiosError) {
         setError(err.response?.data || null);
@@ -69,6 +70,7 @@ export const useLogin = ({
     requestData.email,
     requestData.password,
     setAuthenticatedUser,
+    refreshCsrfToken,
     url,
   ]);
 

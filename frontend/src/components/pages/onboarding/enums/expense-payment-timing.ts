@@ -1,0 +1,5 @@
+export enum ExpensePaymentTiming {
+  EVERY_PAYCHECK = 'EVERY_PAYCHECK',
+  PAYCHECK_POSITION = 'PAYCHECK_POSITION',
+  DAY_OF_MONTH = 'DAY_OF_MONTH',
+}

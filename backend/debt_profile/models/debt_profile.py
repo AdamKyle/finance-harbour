@@ -21,6 +21,7 @@ class DebtProfile(models.Model):
         default="",
     )
     debts = models.JSONField(default=list)
+    next_pay_date = models.DateField(null=True, blank=True)
     left_over_warning_amount_cents = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

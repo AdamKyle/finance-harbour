@@ -18,16 +18,40 @@ const IconButton = ({
   aria_label,
   aria_controls,
   aria_expanded,
+  aria_current,
   show_label = false,
+  button_ref,
 }: IconButtonProps) => {
   const variantClasses = iconButtonVariantStyles(variant);
 
-  const renderIcon = () => {
-    if (typeof icon === 'string') {
-      return <i className={icon} aria-hidden="true" />;
+  const getAccessibleLabel = () => {
+    if (aria_label !== undefined) {
+      return aria_label;
     }
 
-    return icon;
+    if (show_label) {
+      return undefined;
+    }
+
+    return label;
+  };
+
+  const accessibleLabel = getAccessibleLabel();
+
+  const renderIcon = () => {
+    if (typeof icon !== 'string') {
+      return icon;
+    }
+
+    return <i className={icon} aria-hidden="true" />;
+  };
+
+  const renderLabel = () => {
+    if (!show_label) {
+      return null;
+    }
+
+    return <span>{label}</span>;
   };
 
   return (
@@ -39,16 +63,18 @@ const IconButton = ({
         variantClasses.button,
         additional_css
       )}
-      aria-label={aria_label || (!show_label ? label : undefined)}
+      aria-label={accessibleLabel}
       aria-controls={aria_controls}
       aria-expanded={aria_expanded}
+      aria-current={aria_current}
       disabled={disabled}
+      ref={button_ref}
     >
       <span className={clsx(iconButtonIconBaseStyles(), variantClasses.icon)}>
         {renderIcon()}
       </span>
 
-      {show_label && <span>{label}</span>}
+      {renderLabel()}
     </button>
   );
 };

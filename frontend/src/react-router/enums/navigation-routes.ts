@@ -9,6 +9,10 @@ enum NavigationRoutes {
 
   // Protected Routes
   ONBOARDING = '/onboarding',
+  DASHBOARD = '/dashboard',
+  PLAN_FUTURE_EXPENSES = '/dashboard/plan-future-expenses',
+  DEBT_PROFILES = '/dashboard/debt-profiles',
+  PAYDAY = '/dashboard/payday/:periodId',
   PROFILE = '/profile',
   SETTINGS = '/settings',
 }
