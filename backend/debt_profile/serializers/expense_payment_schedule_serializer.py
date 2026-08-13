@@ -58,6 +58,6 @@ class ExpensePaymentScheduleSerializer(serializers.Serializer):
             if day_of_month is None:
                 raise serializers.ValidationError({"day_of_month": "Enter a day from 1 to 31."})
             if paycheck_position is not None:
-                raise serializers.ValidationError({"paycheck_position": "Date schedules do not use a paycheck."})
+                attributes["paycheck_position"] = PaycheckPosition(paycheck_position)
 
         return attributes

@@ -30,10 +30,26 @@ def validate_schedule_positions(
     valid_positions = VALID_POSITIONS_BY_PAY_PERIOD.get(pay_period_type, set())
 
     for schedule in schedules:
-        if schedule["timing"] != ExpensePaymentTiming.PAYCHECK_POSITION:
+        if schedule["timing"] == ExpensePaymentTiming.EVERY_PAYCHECK:
+            continue
+
+        if schedule["paycheck_position"] is None:
             continue
 
         if schedule["paycheck_position"] not in valid_positions:
+            return False
+
+    return True
+
+
+def validate_new_schedule_funding_positions(
+    schedules: list[ExpensePaymentScheduleDefinition],
+) -> bool:
+    for schedule in schedules:
+        if schedule["timing"] != ExpensePaymentTiming.DAY_OF_MONTH:
+            continue
+
+        if not schedule["paycheck_position"]:
             return False
 
     return True

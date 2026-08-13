@@ -1,4 +1,4 @@
-import { PayPeriodType } from './pay-period-type';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
 
 export interface IncomeStepFormState {
   income_per_pay_period_dollars: string;

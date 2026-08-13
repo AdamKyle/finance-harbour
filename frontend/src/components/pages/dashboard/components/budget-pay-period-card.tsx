@@ -582,7 +582,7 @@ const BudgetPayPeriodCard = ({
               variant={ButtonVariant.GHOST}
               on_click={handleEditClick}
               button_ref={handleEditButtonRef}
-              additional_css="shrink-0 rounded-full text-blue-bell-700 dark:text-blue-bell-300"
+              additional_css="relative z-20 shrink-0 rounded-full text-blue-bell-700 pointer-events-auto dark:text-blue-bell-300"
             />
           </div>
           {renderAlert()}

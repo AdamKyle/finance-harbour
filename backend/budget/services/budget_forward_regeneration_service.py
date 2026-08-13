@@ -18,6 +18,7 @@ def regenerate_budget_from_pay_period(
     user: User,
     period_id: int,
     new_pay_date: datetime.date,
+    cadence_anchor: datetime.date | None = None,
 ) -> models.BudgetPayPeriod:
     selected_period = (
         models.BudgetPayPeriod.objects.select_for_update()
@@ -96,7 +97,7 @@ def regenerate_budget_from_pay_period(
     period_states = build_budget_period_states(
         debt_profile=debt_profile,
         pay_dates=generated_dates,
-        cadence_anchor=new_pay_date,
+        cadence_anchor=cadence_anchor or new_pay_date,
         planning_date=planning_date,
     )
     regenerated_periods = create_budget_periods(

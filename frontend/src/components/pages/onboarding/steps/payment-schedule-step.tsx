@@ -1,12 +1,11 @@
 import React from 'react';
 
-import PaymentScheduleFields from './payment-schedule-fields';
-
 import { dollarsToCents, formatCentsAsCurrency } from 'lib/money/money';
 
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
-import { CommonExpenseSourceKey } from 'components/pages/onboarding/types/payment-schedule-form-state';
 import PaymentScheduleStepProps from 'components/pages/onboarding/types/payment-schedule-step-props';
+import PaymentScheduleFields from 'components/payment-schedule/payment-schedule-fields';
+import { CommonExpenseSourceKey } from 'components/payment-schedule/types/payment-schedule-form-state';
 
 import { Alert } from 'ui/alerts/alert';
 import { AlertVariant } from 'ui/alerts/enums/alert-variant';

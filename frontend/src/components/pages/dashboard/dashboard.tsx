@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { BudgetLineItemDefinition } from './api/hooks/definitions/budget-line-item-definition';
 import { useBudgetTimeline } from './api/hooks/use-budget-timeline';
 import BudgetPayPeriodCard from './components/budget-pay-period-card';
+import { useAddBillDashboardRefresh } from './hooks/use-add-bill-dashboard-refresh';
 import { usePaydayDashboardRefresh } from './hooks/use-payday-dashboard-refresh';
 import PrependMeasurement from './types/prepend-measurement';
 import { getDashboardFocusPeriodId } from './utils/dashboard-route-state';
@@ -49,6 +50,7 @@ const Dashboard = () => {
     refresh_loaded_pages: refreshLoadedPages,
   } = useBudgetTimeline({ anchor_period_id: routeFocusPeriodId });
   usePaydayDashboardRefresh({ refresh_dashboard: refreshLoadedPages });
+  useAddBillDashboardRefresh({ refresh_dashboard: refreshLoadedPages });
 
   const sharedLineItems = useMemo(() => {
     const definitionsBySourceKey = new Map<string, BudgetLineItemDefinition>();

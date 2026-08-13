@@ -25,7 +25,8 @@
       "styles/*": ["./src/styles/*"],
       "ui/*": ["./src/ui/*"],
       "configuration/*": ["./src/configuration/*"],
-      "lib/*": ["./src/lib/*"]
+      "lib/*": ["./src/lib/*"],
+      "util/*": ["./src/util/*"]
     }
   },
   "include": ["src"],

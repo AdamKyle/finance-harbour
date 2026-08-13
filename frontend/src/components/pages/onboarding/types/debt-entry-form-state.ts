@@ -1,3 +1,5 @@
+import { PaymentScheduleFormState } from 'components/payment-schedule/types/payment-schedule-form-state';
+
 export interface DebtEntryFormState {
   label: string;
   current_balance_dollars: string;
@@ -13,4 +15,3 @@ export type DebtEntryStringFieldName = keyof Pick<
   | 'minimum_payment_dollars'
   | 'current_payment_dollars'
 >;
-import { PaymentScheduleFormState } from './payment-schedule-form-state';

@@ -6,16 +6,16 @@ import { SaveDebtProfileRequestDefinition } from 'components/pages/onboarding/ap
 import { SaveLeftOverWarningThresholdRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-left-over-warning-threshold-request-definition';
 import { SaveMonthlyExpenseRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-monthly-expense-request-definition';
 import { SaveProfileOnboardingRequestDefinition } from 'components/pages/onboarding/api/hooks/definitions/save-profile-onboarding-request-definition';
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
 import { RecurringExpenseCategory } from 'components/pages/onboarding/enums/recurring-expense-category';
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import { DebtStepFormState } from 'components/pages/onboarding/types/debt-step-form-state';
 import { ExpenseStepFormState } from 'components/pages/onboarding/types/expense-step-form-state';
 import { IncomeStepFormState } from 'components/pages/onboarding/types/income-step-form-state';
 import { LeftOverWarningStepFormState } from 'components/pages/onboarding/types/left-over-warning-step-form-state';
-import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
-import { PaymentScheduleFormState } from 'components/pages/onboarding/types/payment-schedule-form-state';
 import { ProfileStepFormState } from 'components/pages/onboarding/types/profile-step-form-state';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
+import { PaymentScheduleFormState } from 'components/payment-schedule/types/payment-schedule-form-state';
 
 const getScheduleDay = (schedule: PaymentScheduleFormState): number | null => {
   if (schedule.day_of_month === '') {
@@ -26,7 +26,7 @@ const getScheduleDay = (schedule: PaymentScheduleFormState): number | null => {
 };
 
 const getPaycheckPosition = (schedule: PaymentScheduleFormState) => {
-  if (schedule.timing !== ExpensePaymentTiming.PAYCHECK_POSITION) {
+  if (schedule.timing === ExpensePaymentTiming.EVERY_PAYCHECK) {
     return null;
   }
 

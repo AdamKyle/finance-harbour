@@ -1,10 +1,10 @@
 import { MiscExpenseEntryFormState } from './misc-expense-entry-form-state';
+
+import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import {
   CommonExpenseSourceKey,
   PaymentScheduleFormState,
-} from './payment-schedule-form-state';
-
-import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
+} from 'components/payment-schedule/types/payment-schedule-form-state';
 
 export interface ExpenseStepFormState {
   rent_or_mortgage_dollars: string;

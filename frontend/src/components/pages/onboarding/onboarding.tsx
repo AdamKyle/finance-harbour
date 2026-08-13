@@ -18,7 +18,6 @@ import {
   OnboardingStepId,
 } from './types/onboarding-step-id';
 import { ProfileStepFormState } from './types/profile-step-form-state';
-import { useScrollToTop } from '../../../util/hooks/use-scroll-to-top';
 
 import { FinanceHarbourScreen } from 'configuration/screen-manager/enums/finance-harbour-screen';
 import { useFHScreenNavigation } from 'configuration/screen-manager/screen-manager-kit';
@@ -54,6 +53,8 @@ import { useOnboardingFormValidation } from 'components/pages/onboarding/validat
 
 import FormWizard from 'ui/form-wizard/form-wizard';
 import Step from 'ui/form-wizard/step';
+
+import { useScrollToTop } from 'util/hooks/use-scroll-to-top';
 
 const Onboarding = () => {
   const { setAuthenticatedUser } = useAuthentication();

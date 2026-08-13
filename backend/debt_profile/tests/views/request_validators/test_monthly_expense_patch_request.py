@@ -5,6 +5,61 @@ from debt_profile.views.request_validators import MonthlyExpensePatchRequest
 
 
 class MonthlyExpensePatchRequestTest(SimpleTestCase):
+    def test_day_of_month_schedule_without_funding_position_is_rejected(self) -> None:
+        request = MonthlyExpensePatchRequest(
+            {
+                "recurring_expenses": [
+                    {
+                        "source_key": "internet",
+                        "category": "INTERNET",
+                        "label": "Internet",
+                        "amount_cents": 9000,
+                    }
+                ],
+                "payment_schedules": [
+                    {
+                        "source_key": "internet",
+                        "timing": "DAY_OF_MONTH",
+                        "paycheck_position": None,
+                        "day_of_month": 10,
+                        "auto_deducted": False,
+                    }
+                ],
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("payment_schedules", raised_error.exception.detail)
+
+    def test_day_of_month_schedule_with_funding_position_is_valid(self) -> None:
+        request = MonthlyExpensePatchRequest(
+            {
+                "recurring_expenses": [
+                    {
+                        "source_key": "internet",
+                        "category": "INTERNET",
+                        "label": "Internet",
+                        "amount_cents": 9000,
+                    }
+                ],
+                "payment_schedules": [
+                    {
+                        "source_key": "internet",
+                        "timing": "DAY_OF_MONTH",
+                        "paycheck_position": "FIRST",
+                        "day_of_month": 10,
+                        "auto_deducted": False,
+                    }
+                ],
+            }
+        )
+
+        request.validate()
+
+        self.assertEqual(request.validated_data["payment_schedules"][0]["paycheck_position"], "FIRST")
+
     def test_accepts_electricity_utility(self) -> None:
         request = MonthlyExpensePatchRequest(
             {

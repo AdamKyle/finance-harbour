@@ -218,3 +218,42 @@ class DebtProfilePatchRequestTest(TestCase):
         request.validate()
 
         self.assertEqual(request.validated_data["next_pay_date"], today)
+
+    def test_day_of_month_schedule_without_funding_position_is_rejected(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "payment_schedules": [
+                    {
+                        "source_key": "debt:0",
+                        "timing": "DAY_OF_MONTH",
+                        "paycheck_position": None,
+                        "day_of_month": 10,
+                        "auto_deducted": False,
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(ValidationError) as raised_error:
+            request.validate()
+
+        self.assertIn("payment_schedules", raised_error.exception.detail)
+
+    def test_day_of_month_schedule_with_funding_position_is_valid(self) -> None:
+        request = DebtProfilePatchRequest(
+            {
+                "payment_schedules": [
+                    {
+                        "source_key": "debt:0",
+                        "timing": "DAY_OF_MONTH",
+                        "paycheck_position": "FIRST",
+                        "day_of_month": 10,
+                        "auto_deducted": False,
+                    }
+                ]
+            }
+        )
+
+        request.validate()
+
+        self.assertEqual(request.validated_data["payment_schedules"][0]["paycheck_position"], "FIRST")

@@ -2,11 +2,11 @@ import React from 'react';
 
 import { dollarsToCents, formatCentsAsCurrency } from 'lib/money/money';
 
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import ConcludeStepProps from 'components/pages/onboarding/types/conclude-step-props';
-import { PaymentScheduleFormState } from 'components/pages/onboarding/types/payment-schedule-form-state';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
+import { PaymentScheduleFormState } from 'components/payment-schedule/types/payment-schedule-form-state';
 
 const ConcludeStep = ({
   debts,

@@ -6,7 +6,10 @@ from core.request_validator_engine import RequestValidatorEngine
 from debt_profile.models import DebtProfile, RecurringExpenseCategory, UtilityType
 from debt_profile.serializers.expense_payment_schedule_serializer import ExpensePaymentScheduleSerializer
 from debt_profile.serializers.recurring_expense_entry_serializer import RecurringExpenseEntrySerializer
-from debt_profile.services.payment_schedule_validation import validate_schedule_positions
+from debt_profile.services.payment_schedule_validation import (
+    validate_new_schedule_funding_positions,
+    validate_schedule_positions,
+)
 from debt_profile.types import RecurringExpenseInput
 
 
@@ -86,7 +89,12 @@ class MonthlyExpensePatchRequest(RequestValidatorEngine):
         if len(source_keys) != len(set(source_keys)):
             raise ValidationError({"payment_schedules": ["Each expense may have only one payment schedule."]})
 
-        self._validated_data["payment_schedules"] = [dict(entry) for entry in serializer.validated_data]
+        validated_schedules = [dict(entry) for entry in serializer.validated_data]
+
+        if not validate_new_schedule_funding_positions(validated_schedules):
+            raise ValidationError({"payment_schedules": ["Select the paycheck that will fund this payment."]})
+
+        self._validated_data["payment_schedules"] = validated_schedules
 
     def validate_schedule_sources(self, debt_profile: DebtProfile) -> None:
         schedules = self._validated_data.get("payment_schedules")

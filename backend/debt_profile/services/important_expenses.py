@@ -34,6 +34,22 @@ def build_important_expense_cards(
             }
         )
 
+    for index, debt in enumerate(debt_profile.debts):
+        amount_cents = int(debt.get("current_payment_cents", 0))
+        source_key = f"debt:{index}"
+
+        if amount_cents <= 0 or source_key in auto_deducted_keys:
+            continue
+
+        cards.append(
+            {
+                "key": source_key,
+                "title": str(debt.get("label", f"Debt {index + 1}")),
+                "amount_cents": amount_cents,
+                "selected": source_key in selected_keys,
+            }
+        )
+
     return cards
 
 

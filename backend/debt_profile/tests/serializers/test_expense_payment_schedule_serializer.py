@@ -108,7 +108,7 @@ class ExpensePaymentScheduleSerializerTest(SimpleTestCase):
 
         self.assertFalse(serializer.is_valid())
 
-    def test_day_of_month_with_paycheck_position_is_rejected(self) -> None:
+    def test_day_of_month_with_paycheck_position_is_valid(self) -> None:
         serializer = ExpensePaymentScheduleSerializer(
             data={
                 "source_key": "insurance_cents",
@@ -119,7 +119,7 @@ class ExpensePaymentScheduleSerializerTest(SimpleTestCase):
             }
         )
 
-        self.assertFalse(serializer.is_valid())
+        self.assertTrue(serializer.is_valid())
 
     def test_paycheck_position_cannot_be_auto_deducted(self) -> None:
         serializer = ExpensePaymentScheduleSerializer(

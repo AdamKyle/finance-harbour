@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react';
 
 import IncomeStepProps from 'components/pages/onboarding/types/income-step-props';
-import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
 
 import DateInput from 'ui/date-input/date-input';
 import Input from 'ui/form-elements/input';

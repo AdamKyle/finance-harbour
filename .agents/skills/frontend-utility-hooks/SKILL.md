@@ -98,15 +98,15 @@ A hook that scrolls or focuses should:
 
 ## Browser APIs
 
-Browser APIs must be referenced through `window` when required by project lint rules.
+Browser DOM operations must use React refs and element-scoped APIs. Do not use `window`, `document`, `globalThis.window`, or `globalThis.document`.
 
 Examples:
 
-- `window.requestAnimationFrame`
-- `window.setTimeout`
-- `window.clearTimeout`
+- `globalThis.requestAnimationFrame`
+- `globalThis.setTimeout`
+- `globalThis.clearTimeout`
 
-Do not use browser globals directly if lint requires explicit `window`.
+Use `globalThis` only for legitimate non-DOM platform APIs and never to access `window` or `document`.
 
 ## Cleanup
 

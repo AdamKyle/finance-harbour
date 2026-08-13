@@ -6,7 +6,6 @@ import PaydayPayChequeStep from './payday-pay-cheque-step';
 import PaydaySummaryStep from './payday-summary-step';
 import PaydayWarnings from './payday-warnings';
 import PaydayWizardProps from './types/payday-wizard-props';
-import { useFocusRequest } from '../../../../util/hooks/use-focus-request';
 
 import { usePaydayQueueContext } from 'components/pages/payday/context/use-payday-queue-context';
 import { usePaydayBacklogProgression } from 'components/pages/payday/hooks/use-payday-backlog-progression';
@@ -17,6 +16,8 @@ import { Alert } from 'ui/alerts/alert';
 import { AlertVariant } from 'ui/alerts/enums/alert-variant';
 import FormWizard from 'ui/form-wizard/form-wizard';
 import Step from 'ui/form-wizard/step';
+
+import { useFocusRequest } from 'util/hooks/use-focus-request';
 
 const PaydayWizard = ({
   detail,

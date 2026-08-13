@@ -1,10 +1,10 @@
 import React, { ChangeEvent } from 'react';
 
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { DebtEntryStringFieldName } from 'components/pages/onboarding/types/debt-entry-form-state';
 import DebtStepProps from 'components/pages/onboarding/types/debt-step-props';
 import { DebtFieldErrorsDefinition } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
 
 import { Alert } from 'ui/alerts/alert';
 import { AlertVariant } from 'ui/alerts/enums/alert-variant';

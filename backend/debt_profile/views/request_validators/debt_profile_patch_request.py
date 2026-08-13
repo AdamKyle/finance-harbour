@@ -6,7 +6,10 @@ from rest_framework.exceptions import ValidationError
 from core.request_validator_engine import RequestValidatorEngine
 from debt_profile.serializers.debt_entry_serializer import DebtEntrySerializer
 from debt_profile.serializers.expense_payment_schedule_serializer import ExpensePaymentScheduleSerializer
-from debt_profile.services.payment_schedule_validation import validate_schedule_positions
+from debt_profile.services.payment_schedule_validation import (
+    validate_new_schedule_funding_positions,
+    validate_schedule_positions,
+)
 
 
 class DebtProfilePatchRequest(RequestValidatorEngine):
@@ -61,7 +64,12 @@ class DebtProfilePatchRequest(RequestValidatorEngine):
         if len(source_keys) != len(set(source_keys)):
             raise ValidationError({"payment_schedules": ["Each debt may have only one payment schedule."]})
 
-        self._validated_data["payment_schedules"] = [dict(entry) for entry in serializer.validated_data]
+        validated_schedules = [dict(entry) for entry in serializer.validated_data]
+
+        if not validate_new_schedule_funding_positions(validated_schedules):
+            raise ValidationError({"payment_schedules": ["Select the paycheck that will fund this payment."]})
+
+        self._validated_data["payment_schedules"] = validated_schedules
 
     def _validate_pay_period_type(self) -> None:
         pay_period_type = self._validated_data.get("pay_period_type")

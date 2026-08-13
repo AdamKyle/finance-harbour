@@ -8,8 +8,8 @@ import {
   formatFinancialVariance,
 } from 'lib/money/money';
 
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
 import { PaymentReviewStatus } from 'components/pages/payday/enums/payday-status';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
 
 import Button from 'ui/buttons/button';
 import { ButtonVariant } from 'ui/buttons/enums/button-variant';

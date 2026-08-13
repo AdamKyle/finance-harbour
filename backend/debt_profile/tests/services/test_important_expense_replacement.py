@@ -185,3 +185,24 @@ class ImportantExpenseReplacementTest(TestCase):
 
         self.assertFalse(profile.required_expenses.exists())
         self.assertEqual(build_important_expense_cards(profile)[0]["key"], "food")
+
+    def test_manual_debt_selection_uses_required_expense_workflow(self) -> None:
+        user = User.objects.create_user(email="important-debt@example.com", password="StrongPassword123!")
+        profile = DebtProfile.objects.create(
+            user=user,
+            debts=[
+                {
+                    "label": "Student Loan",
+                    "current_balance_cents": 1200000,
+                    "minimum_payment_cents": 10000,
+                    "current_payment_cents": 15000,
+                }
+            ],
+        )
+
+        cards = build_important_expense_cards(profile)
+        replace_required_expenses(profile, ["debt:0"])
+
+        self.assertEqual(cards[0]["key"], "debt:0")
+        self.assertEqual(cards[0]["amount_cents"], 15000)
+        self.assertTrue(profile.required_expenses.filter(source_key="debt:0").exists())

@@ -9,7 +9,7 @@ These instructions apply to this repository.
 - Backend apps use responsibility-specific folders such as `models/`, `managers/`, `serializers/`, `structure_serializers/`, `views/request_validators/`, `api/views/`, `api/viewsets/`, `services/`, `adapters/`, `urls.py`, and mirrored tests when those responsibilities apply.
 - The backend uses `dj-rest-auth`, `django-allauth`, `djangorestframework-simplejwt`, JWT cookies, CSRF protection, throttling, PostgreSQL, and Ruff.
 - The frontend is React 19, TypeScript, Vite, React Router 7, Tailwind CSS, tsyringe, axios, strict `tsconfig`, ESLint, Prettier, and Yarn 4.
-- Frontend source lives under `frontend/src/` with aliases for `assets`, `components`, `configuration`, `layout`, `lib`, `pages`, `router`, `styles`, and `ui`.
+- Frontend source lives under `frontend/src/` with aliases for `assets`, `components`, `configuration`, `layout`, `lib`, `pages`, `router`, `styles`, `ui`, and `util`.
 - The frontend uses reusable `ui/**` components, page-specific `components/pages/**`, app services under `lib/**`, route files under `react-router/**`, and colocated `types/**`, `definitions/**`, or existing `deffinitions/**` files. Preserve the current `deffinitions` spelling where it already exists.
 
 ## Required skill usage
@@ -27,6 +27,10 @@ Use the matching skill before changing code:
 - Frontend formatting/checks: `.agents/skills/frontend-formatting/SKILL.md`
 - Frontend component discovery/reuse: `.agents/skills/frontend-component-reuse-and-composition/SKILL.md`
 - Frontend behavior verification: `.agents/skills/frontend-behavioral-validation/SKILL.md`
+- Frontend import aliases: `.agents/skills/frontend-import-aliases/SKILL.md`
+- Frontend Event System: `.agents/skills/frontend-event-system/SKILL.md`
+- Frontend Side Peeks: `.agents/skills/frontend-side-peeks/SKILL.md`
+- Frontend browser-global access: `.agents/skills/frontend-browser-global-access/SKILL.md`
 - Backend security and SOC 2 control support: `.agents/skills/backend-security-and-soc2-controls/SKILL.md`
 - Backend database efficiency: `.agents/skills/backend-database-performance-and-efficiency/SKILL.md`
 - Backend transactions/concurrency/idempotency: `.agents/skills/backend-transactions-concurrency-and-idempotency/SKILL.md`

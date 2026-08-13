@@ -1,5 +1,5 @@
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
 
 export default interface ExpensePaymentScheduleDefinition {
   source_key: string;

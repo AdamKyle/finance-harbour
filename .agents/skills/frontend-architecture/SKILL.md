@@ -136,6 +136,7 @@ pages/*
 router/*
 styles/*
 ui/*
+util/*
 ```
 
 Rules:

@@ -4,10 +4,7 @@ import {
   validatePositiveDollarInput,
 } from 'lib/money/money';
 
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
-import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
 import {
   DebtFieldErrorsDefinition,
   ExpenseFieldErrorsDefinition,
@@ -18,6 +15,9 @@ import {
   ProfileFieldErrorsDefinition,
 } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
 import { UseOnboardingFormValidationDefinition } from 'components/pages/onboarding/validations/hooks/definitions/use-onboarding-form-validation-definition';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
 
 export const useOnboardingFormValidation =
   (): UseOnboardingFormValidationDefinition => {
@@ -61,7 +61,8 @@ export const useOnboardingFormValidation =
         !/^\d+$/.test(day) ||
         parsedDay < 1 ||
         parsedDay > 31 ||
-        autoDeducted === null
+        autoDeducted === null ||
+        isPaycheckPositionInvalid(position, payPeriodType)
       );
     };
 

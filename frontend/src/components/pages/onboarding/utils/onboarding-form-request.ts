@@ -1,5 +1,3 @@
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import { DebtEntryFormState } from 'components/pages/onboarding/types/debt-entry-form-state';
 import { DebtStepFormState } from 'components/pages/onboarding/types/debt-step-form-state';
@@ -9,9 +7,11 @@ import { IncomeStepFormState } from 'components/pages/onboarding/types/income-st
 import { LeftOverWarningStepFormState } from 'components/pages/onboarding/types/left-over-warning-step-form-state';
 import { MiscExpenseEntryFormState } from 'components/pages/onboarding/types/misc-expense-entry-form-state';
 import { OnboardingFormData } from 'components/pages/onboarding/types/onboarding-form-data';
-import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
-import { PaymentScheduleFormState } from 'components/pages/onboarding/types/payment-schedule-form-state';
 import { ProfileStepFormState } from 'components/pages/onboarding/types/profile-step-form-state';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
+import { PaymentScheduleFormState } from 'components/payment-schedule/types/payment-schedule-form-state';
 
 const createPaycheckSchedule = (): PaymentScheduleFormState => ({
   timing: ExpensePaymentTiming.PAYCHECK_POSITION,

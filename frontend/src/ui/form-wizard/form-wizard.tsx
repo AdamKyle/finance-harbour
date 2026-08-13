@@ -7,14 +7,14 @@ import React, {
   useState,
 } from 'react';
 
-import { useScrollToTop } from '../../util/hooks/use-scroll-to-top';
-
 import ApiErrorAlert from 'lib/api-handler/components/api-error-alert';
 
 import Card from 'ui/cards/card';
 import FormWizardNav from 'ui/form-wizard/form-wizard-nav';
 import FormWizardProps from 'ui/form-wizard/types/form-wizard-props';
 import StepProps from 'ui/form-wizard/types/step-props';
+
+import { useScrollToTop } from 'util/hooks/use-scroll-to-top';
 
 const FormWizard = ({
   total_steps,

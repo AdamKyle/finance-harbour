@@ -31,9 +31,7 @@ export default [
       },
       globals: {
         console: 'readonly',
-        document: 'readonly',
         HTMLElement: 'readonly',
-        window: 'readonly',
       },
     },
     plugins: {
@@ -58,6 +56,7 @@ export default [
             ['ui', './src/ui'],
             ['configuration', './src/configuration'],
             ['lib', './src/lib'],
+            ['util', './src/util'],
           ],
           extensions: ['.ts', '.tsx', '.js', '.jsx'],
         },
@@ -88,6 +87,7 @@ export default [
             ui: './src/ui',
             configuration: './src/configuration',
             lib: './src/lib',
+            util: './src/util',
           },
         },
       ],
@@ -130,7 +130,7 @@ export default [
             { pattern: 'router/**', group: 'internal', position: 'after' },
             { pattern: 'styles/**', group: 'internal', position: 'after' },
             { pattern: 'ui/**', group: 'internal', position: 'after' },
-            
+            { pattern: 'util/**', group: 'internal', position: 'after' },
           ],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
@@ -152,6 +152,22 @@ export default [
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always'],
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-restricted-globals': [
+        'error',
+        { name: 'window', message: 'Use React refs or approved globalThis platform APIs.' },
+        { name: 'document', message: 'Use React refs and element-scoped DOM APIs.' },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='globalThis'][property.name='window']",
+          message: 'globalThis.window is not allowed.',
+        },
+        {
+          selector: "MemberExpression[object.name='globalThis'][property.name='document']",
+          message: 'globalThis.document is not allowed.',
+        },
+      ],
       'no-else-return': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',

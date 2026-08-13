@@ -30,7 +30,7 @@ class MonthlyExpenseViewTest(APITestCase):
                     {
                         "source_key": "utilities",
                         "timing": "DAY_OF_MONTH",
-                        "paycheck_position": None,
+                        "paycheck_position": "FIRST",
                         "day_of_month": 12,
                         "auto_deducted": True,
                     }

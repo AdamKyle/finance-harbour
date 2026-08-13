@@ -1,11 +1,11 @@
 import { ChangeEvent } from 'react';
 
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { UtilityType } from 'components/pages/onboarding/enums/utility-type';
 import { ExpenseStringFieldName } from 'components/pages/onboarding/types/expense-step-form-state';
 import ExpenseStepProps from 'components/pages/onboarding/types/expense-step-props';
 import { MiscExpenseFieldErrorsDefinition } from 'components/pages/onboarding/validations/hooks/definitions/onboarding-form-errors-definition';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
 
 import { Alert } from 'ui/alerts/alert';
 import { AlertVariant } from 'ui/alerts/enums/alert-variant';

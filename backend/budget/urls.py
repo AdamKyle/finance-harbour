@@ -1,6 +1,6 @@
 from django.urls import path
 
-from budget.api.views import BudgetBillCreateView, BudgetValueUpdateView
+from budget.api.views import BudgetBillCreateView, BudgetValueUpdateView, RecurringObligationView
 from budget.api.views.payday_views import (
     PaydayDebtBalanceUpdateView,
     PaydayDetailView,
@@ -15,6 +15,7 @@ urlpatterns = [
     path("budget/pay-periods/", BudgetView.as_view()),
     path("budget/pay-periods/<int:period_id>/values/", BudgetValueUpdateView.as_view()),
     path("budget/pay-periods/<int:period_id>/bills/", BudgetBillCreateView.as_view()),
+    path("budget/recurring-obligations/", RecurringObligationView.as_view()),
     path("budget/payday/queue/", PaydayQueueView.as_view()),
     path("budget/payday/pay-periods/<int:period_id>/", PaydayDetailView.as_view()),
     path("budget/payday/pay-periods/<int:period_id>/pay-cheque/", PaydayPayChequeUpdateView.as_view()),

@@ -39,6 +39,7 @@ export default defineConfig({
       ui: path.resolve(dirname, 'src/ui'),
       configuration: path.resolve(dirname, 'src/configuration'),
       lib: path.resolve(dirname, 'src/lib'),
+      util: path.resolve(dirname, 'src/util'),
     },
   },
 });

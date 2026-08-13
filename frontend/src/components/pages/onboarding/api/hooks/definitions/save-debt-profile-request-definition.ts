@@ -1,7 +1,7 @@
 import { DebtEntryDefinition } from './debt-entry-definition';
 import ExpensePaymentScheduleDefinition from './expense-payment-schedule-definition';
 
-import { PayPeriodType } from 'components/pages/onboarding/types/pay-period-type';
+import { PayPeriodType } from 'components/payment-schedule/enums/pay-period-type';
 
 export interface SaveDebtProfileRequestDefinition {
   income_per_pay_period_cents?: number;

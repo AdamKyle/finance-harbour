@@ -126,7 +126,13 @@ def build_budget_period_states(
     )
     _apply_every_paycheck_schedules(periods, obligations)
     _apply_paycheck_position_schedules(periods, obligations, cadence_anchor, debt_profile.pay_period_type)
-    _apply_day_of_month_schedules(periods, obligations, planning_date)
+    _apply_day_of_month_schedules(
+        periods,
+        obligations,
+        planning_date,
+        cadence_anchor,
+        debt_profile.pay_period_type,
+    )
 
     return periods
 
@@ -173,7 +179,7 @@ def _build_obligations(
                 source_key=source_key,
                 title=label,
                 monthly_amount_cents=payment,
-                is_required=schedule is not None and schedule.auto_deducted,
+                is_required=source_key in required_keys or (schedule is not None and schedule.auto_deducted),
                 display_order=order,
                 payment_timing=schedule.timing if schedule is not None else None,
                 payment_day_of_month=schedule.day_of_month if schedule is not None else None,
@@ -232,6 +238,8 @@ def _apply_day_of_month_schedules(
     period_states: list[PeriodState],
     obligations: list[SourceObligation],
     planning_date: datetime.date,
+    cadence_anchor: datetime.date,
+    pay_period_type: str,
 ) -> None:
     scheduled_obligations = [
         obligation
@@ -257,7 +265,20 @@ def _apply_day_of_month_schedules(
             last_day = calendar.monthrange(month_cursor.year, month_cursor.month)[1]
             configured_date = month_cursor.replace(day=min(obligation.payment_day_of_month or 1, last_day))
             payment_date = _move_weekend_to_monday(configured_date)
-            responsible_period = _find_responsible_period(period_states, payment_date, planning_date)
+            responsible_period = None
+
+            if obligation.paycheck_position is not None:
+                for period in period_states:
+                    if period.month_key != (month_cursor.year, month_cursor.month):
+                        continue
+
+                    cadence_position = get_payday_position(period.pay_date, cadence_anchor, pay_period_type)
+
+                    if cadence_position.matches(obligation.paycheck_position):
+                        responsible_period = period
+                        break
+            else:
+                responsible_period = _find_responsible_period(period_states, payment_date, planning_date)
 
             if responsible_period is not None:
                 responsible_period.allocations.append(

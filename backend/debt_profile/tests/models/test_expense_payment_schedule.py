@@ -68,6 +68,22 @@ class ExpensePaymentScheduleTest(TestCase):
                 day_of_month=32,
             )
 
+    def test_day_of_month_allows_funding_paycheck_and_auto_deduction(self) -> None:
+        user = User.objects.create_user(email="schedule-funded-date@example.com", password="StrongPassword123!")
+        debt_profile = DebtProfile.objects.create(user=user)
+
+        schedule = ExpensePaymentSchedule.objects.create(
+            debt_profile=debt_profile,
+            source_key="insurance",
+            timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            paycheck_position=PaycheckPosition.SECOND,
+            day_of_month=22,
+            auto_deducted=True,
+        )
+
+        self.assertEqual(schedule.paycheck_position, PaycheckPosition.SECOND)
+        self.assertTrue(schedule.auto_deducted)
+
     def test_source_key_is_unique_per_profile(self) -> None:
         user = User.objects.create_user(email="schedule-unique@example.com", password="StrongPassword123!")
         debt_profile = DebtProfile.objects.create(user=user)

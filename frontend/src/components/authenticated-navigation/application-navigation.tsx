@@ -1,7 +1,11 @@
 import clsx from 'clsx';
+import { MouseEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import ApplicationNavigationProps from './types/application-navigation-props';
+
+import { FinanceHarbourSidePeek } from 'configuration/side-peek/enums/finance-harbour-side-peek';
+import { useFHSidePeekNavigation } from 'configuration/side-peek/side-peek-kit';
 
 import { usePaydayQueueContext } from 'components/pages/payday/context/use-payday-queue-context';
 import { PaydayReconciliationStatus } from 'components/pages/payday/enums/payday-status';
@@ -19,6 +23,7 @@ const ApplicationNavigation = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { queue } = usePaydayQueueContext();
+  const { push } = useFHSidePeekNavigation();
 
   const navigationButtonCss =
     'min-h-14 flex-1 flex-col justify-center gap-1 rounded-xl px-2 py-2 text-center text-xs md:w-full md:flex-none md:flex-row md:justify-start md:px-4 md:text-sm';
@@ -53,6 +58,10 @@ const ApplicationNavigation = ({
     }
 
     void navigate(getPaydayRoute(queue.oldest_unresolved_period.id));
+  };
+
+  const handleAddBill = (event: MouseEvent<HTMLButtonElement>) => {
+    push(FinanceHarbourSidePeek.ADD_BILL, undefined, event.currentTarget);
   };
 
   const renderPaydayAction = () => {
@@ -99,6 +108,14 @@ const ApplicationNavigation = ({
       )}
     >
       <div className="flex gap-2 md:flex-col md:gap-3">
+        <IconButton
+          icon="fa-solid fa-plus text-base"
+          label="Add a bill"
+          show_label
+          variant={ButtonVariant.Default}
+          on_click={handleAddBill}
+          additional_css={navigationButtonCss}
+        />
         <IconButton
           icon="fa-solid fa-wallet text-base"
           label="Track Spending"

@@ -1,7 +1,7 @@
 import { BudgetSourceType } from 'components/pages/dashboard/api/enums/budget-source-type';
-import { ExpensePaymentTiming } from 'components/pages/onboarding/enums/expense-payment-timing';
-import { PaycheckPosition } from 'components/pages/onboarding/enums/paycheck-position';
 import { PaymentReviewStatus } from 'components/pages/payday/enums/payday-status';
+import { ExpensePaymentTiming } from 'components/payment-schedule/enums/expense-payment-timing';
+import { PaycheckPosition } from 'components/payment-schedule/enums/paycheck-position';
 
 export interface BudgetLineItemDefinition {
   id: number;

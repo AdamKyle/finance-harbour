@@ -56,7 +56,6 @@ class ExpensePaymentSchedule(models.Model):
                     )
                     | models.Q(
                         timing=ExpensePaymentTiming.DAY_OF_MONTH,
-                        paycheck_position="",
                         day_of_month__isnull=False,
                         day_of_month__gte=1,
                         day_of_month__lte=31,
