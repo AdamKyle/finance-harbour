@@ -63,9 +63,13 @@ class GenerateBudgetInitialPartialCycleTest(TestCase):
         )
 
         plan = generate_budget(user)
+        first_period = plan.pay_periods.get(pay_date=datetime.date(2026, 8, 22))
+        september_period = plan.pay_periods.get(pay_date=datetime.date(2026, 9, 5))
 
-        self.assertFalse(plan.pay_periods.filter(line_items__source_key="insurance").exists())
+        self.assertFalse(first_period.line_items.filter(source_key="insurance").exists())
         self.assertFalse(plan.pay_periods.filter(pay_date__lt=datetime.date(2026, 8, 22)).exists())
+        september_insurance = september_period.line_items.get(source_key="insurance")
+        self.assertEqual(september_insurance.expected_payment_date, datetime.date(2026, 9, 10))
 
     def test_weekend_adjusted_bill_is_allocated_to_first_generated_period(self) -> None:
         user = User.objects.create_user(email="partial-weekend@example.com", password="StrongPassword123!")

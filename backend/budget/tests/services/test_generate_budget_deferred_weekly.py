@@ -151,8 +151,8 @@ class GenerateBudgetDeferredWeeklyTest(TestCase):
             key=lambda p: p.sequence,
         )
         second_period = august_periods[1]
-        water_on_second = second_period.line_items.filter(source_key="utilities")
-        self.assertTrue(water_on_second.exists())
+        food_on_second = second_period.line_items.filter(source_key="food")
+        self.assertTrue(food_on_second.exists())
         self.assertFalse(second_period.affects_important_expenses)
         self.assertFalse(second_period.has_deferred_important_expenses)
 

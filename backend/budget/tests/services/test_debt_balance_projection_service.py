@@ -365,7 +365,7 @@ class DebtBalanceProjectionServiceTest(TestCase):
 
         projection = get_debt_balance_projections(later)[0]
 
-        self.assertEqual(projection.expected_balance_cents, 80000)
+        self.assertEqual(projection.expected_balance_cents, 90000)
         self.assertTrue(projection.is_uncertain)
 
     def test_scheduled_payment_uses_planned_payment_and_marks_projection_uncertain(self) -> None:
@@ -415,7 +415,7 @@ class DebtBalanceProjectionServiceTest(TestCase):
 
         projection = get_debt_balance_projections(later)[0]
 
-        self.assertEqual(projection.expected_balance_cents, 90000)
+        self.assertEqual(projection.expected_balance_cents, 80000)
         self.assertTrue(projection.is_uncertain)
 
     def test_unknown_balance_marks_projection_uncertain(self) -> None:

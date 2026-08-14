@@ -19,7 +19,7 @@ class RequiredExpenseTest(TestCase):
             amount_cents=50000,
         )
 
-        self.assertEqual(str(expense), f"RequiredExpense({debt_profile.pk}, food_cents)")
+        self.assertEqual(str(expense), f"RequiredExpense({debt_profile.pk}, food)")
 
     def test_source_key_is_unique_per_debt_profile(self) -> None:
         user = User.objects.create_user(

@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -202,6 +203,8 @@ class ImportantExpensesViewTest(APITestCase):
 
     @override_settings(DEBUG=True)
     def test_owner_can_replace_important_selection_through_cookie_auth_and_csrf(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="owner-important@example.com", password="StrongPassword123!")
         owner_profile = DebtProfile.objects.create(user=owner)
         RecurringExpense.objects.create(
@@ -246,6 +249,8 @@ class ImportantExpensesViewTest(APITestCase):
 
     @override_settings(DEBUG=True)
     def test_selection_is_scoped_to_cookie_authenticated_owner(self) -> None:
+        cache.clear()
+
         jane = User.objects.create_user(email="jane-important@example.com", password="StrongPassword123!")
         bob = User.objects.create_user(email="bob-important@example.com", password="StrongPassword123!")
         jane_profile = DebtProfile.objects.create(user=jane)
@@ -320,11 +325,13 @@ class ImportantExpensesViewTest(APITestCase):
             secure=True,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(profile.required_expenses.exists())
 
     @override_settings(DEBUG=True)
     def test_authenticated_patch_without_csrf_is_rejected_without_mutation(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="csrf-important@example.com", password="StrongPassword123!")
         profile = DebtProfile.objects.create(user=owner)
         RecurringExpense.objects.create(

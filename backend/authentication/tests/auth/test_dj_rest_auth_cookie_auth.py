@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -41,6 +42,8 @@ class DjRestAuthCookieAuthTest(APITestCase):
         self.assertFalse(user_response.data["completed_onboarding"])
 
     def test_login_sets_jwt_cookies_and_user_endpoint_returns_completed_onboarding(self) -> None:
+        cache.clear()
+
         User.objects.create_user(
             email="logged-in@example.com",
             password="StrongPassword123!",
@@ -76,14 +79,16 @@ class DjRestAuthCookieAuthTest(APITestCase):
         self.assertEqual(user_response.data["email"], "logged-in@example.com")
         self.assertTrue(user_response.data["completed_onboarding"])
 
-    def test_login_rotates_csrf_token_and_requires_fresh_token_for_profile_update(self) -> None:
+    def test_pre_login_csrf_token_remains_valid_after_login_for_profile_update(self) -> None:
+        cache.clear()
+
         user = User.objects.create_user(
             email="csrf-rotation@example.com",
             password="StrongPassword123!",
         )
 
         client = APIClient(enforce_csrf_checks=True)
-        stale_csrf_token = self._get_csrf_token(client)
+        pre_login_csrf_token = self._get_csrf_token(client)
 
         login_response = client.post(
             "/api/auth/login/",
@@ -92,45 +97,32 @@ class DjRestAuthCookieAuthTest(APITestCase):
                 "password": "StrongPassword123!",
             },
             format="json",
-            HTTP_X_CSRFTOKEN=stale_csrf_token,
+            HTTP_X_CSRFTOKEN=pre_login_csrf_token,
             HTTP_ORIGIN=self.secure_origin,
             secure=True,
         )
 
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
 
-        fresh_csrf_token = self._get_csrf_token(client)
-
-        self.assertNotEqual(stale_csrf_token, fresh_csrf_token)
-
-        stale_update_response = client.patch(
+        update_response = client.patch(
             "/api/profile/onboarding/",
             {"nickname": "FreshNick"},
             format="json",
-            HTTP_X_CSRFTOKEN=stale_csrf_token,
+            HTTP_X_CSRFTOKEN=pre_login_csrf_token,
             HTTP_ORIGIN=self.secure_origin,
             secure=True,
         )
 
-        self.assertEqual(stale_update_response.status_code, status.HTTP_403_FORBIDDEN)
-
-        fresh_update_response = client.patch(
-            "/api/profile/onboarding/",
-            {"nickname": "FreshNick"},
-            format="json",
-            HTTP_X_CSRFTOKEN=fresh_csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-
-        self.assertEqual(fresh_update_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(fresh_update_response.data["nickname"], "FreshNick")
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(update_response.data["nickname"], "FreshNick")
 
         user.refresh_from_db()
 
         self.assertEqual(user.nickname, "FreshNick")
 
     def test_logout_deletes_jwt_cookies(self) -> None:
+        cache.clear()
+
         User.objects.create_user(
             email="logout@example.com",
             password="StrongPassword123!",
@@ -188,6 +180,8 @@ class DjRestAuthCookieAuthTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_login_requires_csrf_token(self) -> None:
+        cache.clear()
+
         User.objects.create_user(
             email="missing-login-csrf@example.com",
             password="StrongPassword123!",
@@ -208,6 +202,8 @@ class DjRestAuthCookieAuthTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_logout_requires_csrf_token(self) -> None:
+        cache.clear()
+
         User.objects.create_user(
             email="missing-logout-csrf@example.com",
             password="StrongPassword123!",

@@ -38,7 +38,7 @@ class BudgetForwardRegenerationFinancialServiceTest(TestCase):
             source_key="insurance",
             category=RecurringExpenseCategory.INSURANCE,
             label="Insurance",
-            amount_cents=20000,
+            amount_cents=15000,
         )
         ExpensePaymentSchedule.objects.create(
             debt_profile=profile,
@@ -106,7 +106,7 @@ class BudgetForwardRegenerationFinancialServiceTest(TestCase):
         profile = DebtProfile.objects.create(
             user=user,
             pay_period_type="BIWEEKLY",
-            income_per_pay_period_cents=45000,
+            income_per_pay_period_cents=47500,
             next_pay_date=datetime.date(2026, 8, 21),
         )
         RecurringExpense.objects.create(
@@ -119,9 +119,9 @@ class BudgetForwardRegenerationFinancialServiceTest(TestCase):
         RecurringExpense.objects.create(
             debt_profile=profile,
             source_key="internet",
-            category=RecurringExpenseCategory.INTERNET_CABLE,
+            category=RecurringExpenseCategory.INTERNET,
             label="Internet",
-            amount_cents=15000,
+            amount_cents=37500,
         )
         RecurringExpense.objects.create(
             debt_profile=profile,
@@ -146,6 +146,7 @@ class BudgetForwardRegenerationFinancialServiceTest(TestCase):
             source_key="insurance",
             timing=ExpensePaymentTiming.DAY_OF_MONTH,
             day_of_month=19,
+            paycheck_position=PaycheckPosition.SECOND,
             auto_deducted=True,
         )
         plan = generate_budget(user)
@@ -161,7 +162,7 @@ class BudgetForwardRegenerationFinancialServiceTest(TestCase):
         self.assertTrue(
             next_period.line_items.filter(
                 source_key="insurance",
-                expected_payment_date=datetime.date(2026, 9, 19),
+                expected_payment_date=datetime.date(2026, 9, 21),
             ).exists()
         )
         insurance = next_period.line_items.get(source_key="insurance")

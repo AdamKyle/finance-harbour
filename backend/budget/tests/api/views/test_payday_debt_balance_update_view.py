@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -36,17 +37,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
             title="Visa",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "debt-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/debt-balance/",
@@ -96,17 +88,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
             title="Visa",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "debt-unknown@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/debt-balance/",
@@ -127,7 +110,7 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
     @override_settings(DEBUG=True)
     def test_bob_cannot_add_balance_to_janes_period(self) -> None:
         jane = User.objects.create_user(email="debt-jane@example.com", password="StrongPassword123!")
-        User.objects.create_user(email="debt-bob@example.com", password="StrongPassword123!")
+        bob = User.objects.create_user(email="debt-bob@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=jane,
             start_date=datetime.date(2026, 8, 1),
@@ -150,17 +133,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
             title="Visa",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "debt-bob@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=bob)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/debt-balance/",
@@ -203,17 +177,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
             title="Visa",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "debt-negative@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/debt-balance/",
@@ -286,17 +251,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
             title="Jane Visa",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "debt-source-bob@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=bob)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{bob_period.id}/debt-balance/",
@@ -317,6 +273,8 @@ class PaydayDebtBalanceUpdateViewTest(APITestCase):
 
     @override_settings(DEBUG=True)
     def test_cookie_authenticated_debt_balance_update_requires_csrf(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="debt-csrf@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,

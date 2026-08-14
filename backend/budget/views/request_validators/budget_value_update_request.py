@@ -26,7 +26,7 @@ class BudgetValueUpdateRequest(RequestValidatorEngine):
         super().validate()
 
         field = BudgetValueField(self.validated_data["field"])
-        self.validated_data["field"] = field
+        self._validated_data["field"] = field
 
         if field == BudgetValueField.PAY_DATE:
             raw_pay_date = self.validated_data.get("pay_date")
@@ -35,7 +35,7 @@ class BudgetValueUpdateRequest(RequestValidatorEngine):
                 raise ValidationError({"pay_date": ["Pay date is required."]})
 
             try:
-                self.validated_data["pay_date"] = datetime.date.fromisoformat(raw_pay_date)
+                self._validated_data["pay_date"] = datetime.date.fromisoformat(raw_pay_date)
             except ValueError:
                 raise ValidationError({"pay_date": ["Enter a valid date."]}) from None
 

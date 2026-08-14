@@ -1,6 +1,8 @@
 import datetime
 
+from django.core.cache import cache
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -124,17 +126,8 @@ class PaydayMarkIncompleteViewTest(APITestCase):
             actual_balance_cents=300000,
             reconciled_at=datetime.datetime(2026, 8, 2, tzinfo=datetime.UTC),
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "incomplete-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.post(
             f"/api/budget/payday/pay-periods/{period.id}/mark-incomplete/",
@@ -187,6 +180,8 @@ class PaydayMarkIncompleteViewTest(APITestCase):
 
     @override_settings(DEBUG=True)
     def test_cookie_authenticated_mark_incomplete_requires_csrf(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="incomplete-csrf@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,
@@ -229,7 +224,7 @@ class PaydayMarkIncompleteViewTest(APITestCase):
     @override_settings(DEBUG=True)
     def test_bob_cannot_mark_janes_payday_incomplete_using_user_id(self) -> None:
         jane = User.objects.create_user(email="incomplete-jane@example.com", password="StrongPassword123!")
-        User.objects.create_user(email="incomplete-bob@example.com", password="StrongPassword123!")
+        bob = User.objects.create_user(email="incomplete-bob@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=jane,
             start_date=datetime.date(2026, 8, 1),
@@ -245,17 +240,8 @@ class PaydayMarkIncompleteViewTest(APITestCase):
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "incomplete-bob@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=bob)
 
         response = client.post(
             f"/api/budget/payday/pay-periods/{period.id}/mark-incomplete/",
@@ -271,32 +257,24 @@ class PaydayMarkIncompleteViewTest(APITestCase):
     @override_settings(DEBUG=True)
     def test_current_payday_cannot_be_marked_incomplete(self) -> None:
         owner = User.objects.create_user(email="incomplete-current@example.com", password="StrongPassword123!")
+        current_date = timezone.localdate()
         plan = BudgetPlan.objects.create(
             user=owner,
-            start_date=datetime.date(2026, 8, 9),
-            end_date=datetime.date(2027, 8, 9),
+            start_date=current_date,
+            end_date=current_date + datetime.timedelta(days=365),
             pay_period_type="MONTHLY",
             income_per_pay_period_cents=100000,
         )
         period = BudgetPayPeriod.objects.create(
             plan=plan,
             sequence=0,
-            pay_date=datetime.date(2026, 8, 9),
+            pay_date=current_date,
             pay_cheque_cents=100000,
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "incomplete-current@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.post(
             f"/api/budget/payday/pay-periods/{period.id}/mark-incomplete/",
@@ -312,32 +290,24 @@ class PaydayMarkIncompleteViewTest(APITestCase):
     @override_settings(DEBUG=True)
     def test_future_payday_cannot_be_marked_incomplete(self) -> None:
         owner = User.objects.create_user(email="incomplete-future@example.com", password="StrongPassword123!")
+        future_date = timezone.localdate() + datetime.timedelta(days=1)
         plan = BudgetPlan.objects.create(
             user=owner,
-            start_date=datetime.date(2026, 8, 10),
-            end_date=datetime.date(2027, 8, 10),
+            start_date=future_date,
+            end_date=future_date + datetime.timedelta(days=365),
             pay_period_type="MONTHLY",
             income_per_pay_period_cents=100000,
         )
         period = BudgetPayPeriod.objects.create(
             plan=plan,
             sequence=0,
-            pay_date=datetime.date(2026, 8, 10),
+            pay_date=future_date,
             pay_cheque_cents=100000,
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "incomplete-future@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.post(
             f"/api/budget/payday/pay-periods/{period.id}/mark-incomplete/",

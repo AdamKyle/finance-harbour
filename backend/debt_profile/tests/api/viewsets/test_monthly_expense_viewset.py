@@ -8,7 +8,7 @@ from debt_profile.models import DebtProfile, RecurringExpense
 class MonthlyExpenseViewTest(APITestCase):
     def test_saves_one_combined_utility_without_standalone_internet(self) -> None:
         user = User.objects.create_user(email="utilities-api@example.com", password="StrongPassword123!")
-        DebtProfile.objects.create(user=user)
+        DebtProfile.objects.create(user=user, pay_period_type=DebtProfile.PayPeriodType.MONTHLY)
         client = APIClient()
         client.force_authenticate(user=user)
 

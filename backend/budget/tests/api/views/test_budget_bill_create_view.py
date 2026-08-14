@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -35,19 +36,8 @@ class BudgetBillCreateViewTest(APITestCase):
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_response = client.get("/api/auth/csrf/", secure=True)
-        csrf_token = str(csrf_response.data["csrfToken"])
-        login_response = client.post(
-            "/api/auth/login/",
-            {"email": "bill-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-
-        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.post(
             f"/api/budget/pay-periods/{selected_period.id}/bills/",
@@ -58,9 +48,6 @@ class BudgetBillCreateViewTest(APITestCase):
                 "going_forward": True,
             },
             format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -71,6 +58,7 @@ class BudgetBillCreateViewTest(APITestCase):
                 "id",
                 "sequence",
                 "pay_date",
+                "previous_pay_date",
                 "pay_cheque_cents",
                 "pay_cheque_is_manual",
                 "carried_left_over_cents",
@@ -120,11 +108,11 @@ class BudgetBillCreateViewTest(APITestCase):
             secure=True,
         )
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authenticated_user_cannot_add_bill_to_another_users_period(self) -> None:
         owner = User.objects.create_user(email="bill-owner-denied@example.com", password="StrongPassword123!")
-        User.objects.create_user(email="bill-other@example.com", password="StrongPassword123!")
+        other = User.objects.create_user(email="bill-other@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,
             start_date=datetime.date(2026, 1, 1),
@@ -140,19 +128,8 @@ class BudgetBillCreateViewTest(APITestCase):
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_response = client.get("/api/auth/csrf/", secure=True)
-        csrf_token = str(csrf_response.data["csrfToken"])
-        login_response = client.post(
-            "/api/auth/login/",
-            {"email": "bill-other@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-
-        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        client = APIClient()
+        client.force_authenticate(user=other)
 
         response = client.post(
             f"/api/budget/pay-periods/{period.id}/bills/",
@@ -164,9 +141,6 @@ class BudgetBillCreateViewTest(APITestCase):
                 "user_id": owner.id,
             },
             format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -189,19 +163,8 @@ class BudgetBillCreateViewTest(APITestCase):
             total_available_cents=100000,
             left_over_cents=100000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_response = client.get("/api/auth/csrf/", secure=True)
-        csrf_token = str(csrf_response.data["csrfToken"])
-        login_response = client.post(
-            "/api/auth/login/",
-            {"email": "blank-bill-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-
-        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.post(
             f"/api/budget/pay-periods/{period.id}/bills/",
@@ -212,15 +175,14 @@ class BudgetBillCreateViewTest(APITestCase):
                 "going_forward": False,
             },
             format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(period.line_items.exists())
 
     def test_cookie_authenticated_bill_request_requires_csrf_header(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="bill-csrf-owner@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,

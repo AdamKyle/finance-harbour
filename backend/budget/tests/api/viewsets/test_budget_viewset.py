@@ -294,6 +294,7 @@ class BudgetViewTest(APITestCase):
             "id",
             "sequence",
             "pay_date",
+            "previous_pay_date",
             "pay_cheque_cents",
             "pay_cheque_is_manual",
             "carried_left_over_cents",

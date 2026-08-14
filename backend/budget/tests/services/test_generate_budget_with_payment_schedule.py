@@ -8,6 +8,7 @@ from debt_profile.models import (
     DebtProfile,
     ExpensePaymentSchedule,
     ExpensePaymentTiming,
+    PaycheckPosition,
     RecurringExpense,
     RecurringExpenseCategory,
     UtilityType,
@@ -37,13 +38,14 @@ class GenerateBudgetWithPaymentScheduleTest(TestCase):
             debt_profile=profile,
             source_key="utilities",
             timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            paycheck_position=PaycheckPosition.FIRST,
             day_of_month=12,
         )
 
         plan = generate_budget(user)
         utility_items = plan.pay_periods.filter(line_items__source_key="utilities")
 
-        self.assertEqual(utility_items.count(), 12)
+        self.assertEqual(utility_items.count(), 13)
         self.assertFalse(plan.pay_periods.filter(line_items__source_key="internet").exists())
 
     def test_shorter_month_clamps_then_moves_weekend_to_monday(self) -> None:

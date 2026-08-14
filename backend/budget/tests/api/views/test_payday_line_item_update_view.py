@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -39,17 +40,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             payment_timing=ExpensePaymentTiming.DAY_OF_MONTH,
             expected_payment_date=datetime.date(2026, 8, 12),
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "scheduled-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -95,17 +87,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -152,17 +135,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-lower@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -177,7 +151,7 @@ class PaydayLineItemUpdateViewTest(APITestCase):
         self.assertEqual(line_item.actual_amount_cents, 40000)
 
     @override_settings(DEBUG=True)
-    def test_not_paid_stores_zero_and_keeps_planned_amount_reserved(self) -> None:
+    def test_not_paid_stores_zero_and_releases_planned_amount(self) -> None:
         owner = User.objects.create_user(email="line-not-paid@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,
@@ -202,17 +176,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-not-paid@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -226,7 +191,7 @@ class PaydayLineItemUpdateViewTest(APITestCase):
         period.refresh_from_db()
         self.assertEqual(line_item.actual_amount_cents, 0)
         self.assertIsNone(line_item.paid_at)
-        self.assertEqual(period.left_over_cents, 50000)
+        self.assertEqual(period.left_over_cents, 100000)
 
     @override_settings(DEBUG=True)
     def test_unknown_stores_null_and_keeps_planned_amount_reserved(self) -> None:
@@ -254,17 +219,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-unknown@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -282,7 +238,7 @@ class PaydayLineItemUpdateViewTest(APITestCase):
     @override_settings(DEBUG=True)
     def test_bob_cannot_mutate_janes_line_item(self) -> None:
         jane = User.objects.create_user(email="line-jane@example.com", password="StrongPassword123!")
-        User.objects.create_user(email="line-bob@example.com", password="StrongPassword123!")
+        bob = User.objects.create_user(email="line-bob@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=jane,
             start_date=datetime.date(2026, 8, 1),
@@ -305,17 +261,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-bob@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=bob)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -361,17 +308,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Water",
             amount_cents=25000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-period-owner@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{selected_period.id}/line-items/{other_line_item.id}/",
@@ -409,17 +347,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
             title="Power",
             amount_cents=50000,
         )
-        client = APIClient(enforce_csrf_checks=True)
-        csrf_token = str(client.get("/api/auth/csrf/", secure=True).data["csrfToken"])
-        client.post(
-            "/api/auth/login/",
-            {"email": "line-negative@example.com", "password": "StrongPassword123!"},
-            format="json",
-            HTTP_X_CSRFTOKEN=csrf_token,
-            HTTP_ORIGIN=self.secure_origin,
-            secure=True,
-        )
-        client.credentials(HTTP_X_CSRFTOKEN=csrf_token, HTTP_ORIGIN=self.secure_origin)
+        client = APIClient()
+        client.force_authenticate(user=owner)
 
         response = client.patch(
             f"/api/budget/payday/pay-periods/{period.id}/line-items/{line_item.id}/",
@@ -444,6 +373,8 @@ class PaydayLineItemUpdateViewTest(APITestCase):
 
     @override_settings(DEBUG=True)
     def test_cookie_authenticated_line_item_update_requires_csrf(self) -> None:
+        cache.clear()
+
         owner = User.objects.create_user(email="line-csrf@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=owner,

@@ -8,6 +8,7 @@ from debt_profile.models import (
     DebtProfile,
     ExpensePaymentSchedule,
     ExpensePaymentTiming,
+    PaycheckPosition,
     RecurringExpense,
     RecurringExpenseCategory,
 )
@@ -53,7 +54,11 @@ class GenerateBudgetWeekendSchedulesTest(TestCase):
             amount_cents=10000,
         )
         ExpensePaymentSchedule.objects.create(
-            debt_profile=profile, source_key="phone", timing=ExpensePaymentTiming.DAY_OF_MONTH, day_of_month=29
+            debt_profile=profile,
+            source_key="phone",
+            timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            paycheck_position=PaycheckPosition.FIRST,
+            day_of_month=29,
         )
 
         item = generate_budget(user).pay_periods.first().line_items.get(source_key="phone")
@@ -76,7 +81,11 @@ class GenerateBudgetWeekendSchedulesTest(TestCase):
             amount_cents=10000,
         )
         ExpensePaymentSchedule.objects.create(
-            debt_profile=profile, source_key="phone", timing=ExpensePaymentTiming.DAY_OF_MONTH, day_of_month=30
+            debt_profile=profile,
+            source_key="phone",
+            timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            paycheck_position=PaycheckPosition.FIRST,
+            day_of_month=30,
         )
 
         item = generate_budget(user).pay_periods.first().line_items.get(source_key="phone")
@@ -99,7 +108,11 @@ class GenerateBudgetWeekendSchedulesTest(TestCase):
             amount_cents=10000,
         )
         ExpensePaymentSchedule.objects.create(
-            debt_profile=profile, source_key="phone", timing=ExpensePaymentTiming.DAY_OF_MONTH, day_of_month=31
+            debt_profile=profile,
+            source_key="phone",
+            timing=ExpensePaymentTiming.DAY_OF_MONTH,
+            paycheck_position=PaycheckPosition.LAST,
+            day_of_month=31,
         )
 
         plan = generate_budget(user)

@@ -60,7 +60,10 @@ class GenerateBudgetEveryPaycheckTest(TestCase):
 
         plan = generate_budget(user)
 
-        self.assertEqual(plan.pay_periods.filter(pay_date__month=9, line_items__source_key="food").count(), 2)
+        self.assertEqual(
+            plan.pay_periods.filter(pay_date__year=2026, pay_date__month=9, line_items__source_key="food").count(),
+            2,
+        )
 
     def test_biweekly_three_paycheck_month_appears_three_times(self) -> None:
         user = User.objects.create_user(email="every-biweekly-three@example.com", password="StrongPassword123!")
@@ -83,7 +86,10 @@ class GenerateBudgetEveryPaycheckTest(TestCase):
 
         plan = generate_budget(user)
 
-        self.assertEqual(plan.pay_periods.filter(pay_date__month=10, line_items__source_key="food").count(), 3)
+        self.assertEqual(
+            plan.pay_periods.filter(pay_date__year=2026, pay_date__month=10, line_items__source_key="food").count(),
+            3,
+        )
 
     def test_weekly_four_paycheck_month_appears_four_times(self) -> None:
         user = User.objects.create_user(email="every-weekly-four@example.com", password="StrongPassword123!")
@@ -106,7 +112,10 @@ class GenerateBudgetEveryPaycheckTest(TestCase):
 
         plan = generate_budget(user)
 
-        self.assertEqual(plan.pay_periods.filter(pay_date__month=2, line_items__source_key="food").count(), 4)
+        self.assertEqual(
+            plan.pay_periods.filter(pay_date__year=2026, pay_date__month=2, line_items__source_key="food").count(),
+            4,
+        )
 
     def test_weekly_five_paycheck_month_appears_five_times(self) -> None:
         user = User.objects.create_user(email="every-weekly-five@example.com", password="StrongPassword123!")

@@ -64,7 +64,7 @@ class BudgetLineItemTest(TestCase):
                 actual_amount_cents=None,
             )
 
-    def test_not_paid_line_item_requires_zero_actual_amount(self) -> None:
+    def test_not_paid_line_item_rejects_non_zero_actual_amount(self) -> None:
         user = User.objects.create_user(email="lineitem-not-paid@example.com", password="StrongPassword123!")
         plan = BudgetPlan.objects.create(
             user=user,
@@ -90,7 +90,7 @@ class BudgetLineItemTest(TestCase):
                 title="Food",
                 amount_cents=20000,
                 payment_review_status=PaymentReviewStatus.NOT_PAID,
-                actual_amount_cents=None,
+                actual_amount_cents=1,
             )
 
     def test_scheduled_line_item_requires_a_scheduled_payment_date(self) -> None:
